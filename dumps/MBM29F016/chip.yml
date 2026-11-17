@@ -1,0 +1,16 @@
+# Shown on the chip page. `sector_size` (bytes) sets the columns of the sector map.
+part: MBM29F016
+maker: Fujitsu (later Spansion)
+kind: 16 Mbit parallel NOR flash
+package: 48-pin TSOP(I)
+marking_line: 2M×8 · 5V
+sector_size: 65536
+description: Fujitsu 5 V flash, 2 MB per chip, organised as 32 uniform 64 KB sectors.
+specs:
+  Capacity: 16 Mbit (2 MB)
+  Organisation: 2M × 8
+  Sectors: 32 × 64 KB, in 8 groups of 4
+  Supply: 5.0 V ± 10%
+  Access time: 70 / 90 / 120 ns
+  Package: 48-pin TSOP(I)
+  Autoselect ID: Mfr 04h · Device ADh

@@ -1,0 +1,1 @@
+block-map.png: Content class of every 512-byte block in dump 5 (32 sectors × 128 blocks), labelled with each sector's logical unit number from the header at +0x24; rendered from the raw image.

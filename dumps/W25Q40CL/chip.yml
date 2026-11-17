@@ -1,0 +1,16 @@
+# Shown on the chip page. Sectors are 4 KB, too many to draw one column each, so the
+# sector map falls back to 32 equal slices (no sector_size).
+part: W25Q40CL
+maker: Winbond
+kind: 4 Mbit SPI serial NOR flash
+package: 8-pin SOIC / 8-pad USON
+marking_line: 4Mbit · Quad SPI
+description: Winbond serial flash with 4 KB sectors and standard, dual and quad SPI, 512 KB per chip.
+specs:
+  Capacity: 4 Mbit (512 KB)
+  Pages: 2,048 × 256 bytes
+  Erase units: 128 × 4 KB sectors, 16 × 32 KB blocks, 8 × 64 KB blocks
+  Supply: 2.5 / 3 / 3.3 V
+  Interface: Standard, dual and quad SPI
+  Clock: 104 MHz
+  Packages: 8-pin SOIC (150 / 208 mil), 8-pad USON 2 × 3 mm

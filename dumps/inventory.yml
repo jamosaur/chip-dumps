@@ -1,0 +1,81 @@
+# Chip dump inventory.
+#
+# One entry per dumps/<CHIP>/<N>.bin. site/inventory.py and the /analyze-dumps skill
+# add entries; you can add `source:` (seller, listing, board) and `notes:` by hand and
+# they are kept. Comments other than this header are not preserved.
+
+chips:
+  MBM29F016:
+    dumps:
+      1:
+        file: 1.bin
+        size: 2097152
+        sha256: 90e2d43e726b6acc46c0de53c1e9d8de108cfc049c66d0b7e55674f7add90c2e
+        added: '2026-11-17T21:40:17'
+        source: ''
+        notes: ''
+      2:
+        file: 2.bin
+        size: 2097152
+        sha256: a90acb3e2672a3d98f6a9afb634d46c70b86170ed08ade2acb97e0d0bee56726
+        added: '2026-11-17T22:01:13'
+        source: ''
+        notes: ''
+      3:
+        file: 3.bin
+        size: 2097152
+        sha256: 00a4e439e475bb8278f3ad35f08852fe18b1fab30bb79fb1664c52a4c17380d9
+        added: '2026-11-17T22:03:22'
+        source: ''
+        notes: ''
+      4:
+        file: 4.bin
+        size: 2097152
+        sha256: 665907dffba000bc6d568a689a979896ecb389acbb7bda1a077ae96e9b587423
+        added: '2026-11-17T22:04:33'
+        source: ''
+        notes: ''
+      5:
+        file: 5.bin
+        size: 2097152
+        sha256: 5a727ee8ca7e8c2cfed999221b9a669b145955c26264441316cd505071b230d2
+        added: '2026-11-17T22:05:41'
+        source: ''
+        notes: ''
+      6:
+        file: 6.bin
+        size: 2097152
+        sha256: 02428c2ba222a5b59547bd5b0b018f0470ce6b669facf2677ad5a6d9fedaca11
+        added: '2026-11-17T22:06:58'
+        source: ''
+        notes: ''
+      7:
+        file: 7.bin
+        size: 2097152
+        sha256: 92d17efde9294ade867099511839a0017b9c54ecf8c3589823f390a048c09171
+        added: '2026-11-17T22:10:43'
+        source: ''
+        notes: ''
+      8:
+        file: 8.bin
+        size: 2097152
+        sha256: da78e18102cf1f74a025c75ca2fe677d98a4f3b27ef47d4c02a472136d181fcb
+        added: '2026-11-17T22:11:48'
+        source: ''
+        notes: ''
+      9:
+        file: 9.bin
+        size: 2097152
+        sha256: a35c104e00a2b55f932bd12a00ea26988ac4a8266ffa8bd2b8edded94d4ddbc2
+        added: '2026-11-17T22:13:19'
+        source: ''
+        notes: ''
+  W25Q40CL:
+    dumps:
+      1:
+        file: 1.bin
+        size: 524288
+        sha256: 47363e1b88d5807420a4c4fa1345b745226cc946f4031f59b6975229ec29fc85
+        added: '2026-11-17T23:04:24'
+        source: ''
+        notes: ''
