@@ -1,18 +1,30 @@
 ---
 name: analyze-dumps
-description: Check dumps/ against dumps/inventory.yml, then send one dump-analyst sub-agent per new or unanalysed dump to reverse-engineer it and write analysis/<CHIP>/<N>.md. Use when the user adds dumps, asks to analyse dumps, or runs /analyze-dumps.
-argument-hint: "[CHIP/N ...] [--redo]"
+description: Run the chip-dump analysis pipeline. Check dumps/ against dumps/inventory.yml, analyse each new dump in isolation (dump-analyst), fingerprint it, cross-analyse it against the whole collection (cross-analyst), and write group analyses for groups that are ready (group-analyst). Use when the user adds dumps, asks to analyse dumps, or runs /analyze-dumps.
+argument-hint: "[CHIP/N ...] [--redo] [--cross-all] [--groups]"
 ---
 
-# Analyse new chip dumps
+# Analyse chip dumps
 
 Arguments: `$ARGUMENTS`
 
-- No arguments: analyse every dump that is new or has no write-up.
-- `CHIP/N` values (for example `MBM29F016/7`): analyse only those dumps, even if they already have a write-up.
+- No arguments: analyse every dump that is new or has no write-up, then cross-analyse and run group analysis where ready.
+- `CHIP/N` values (for example `MBM29F016A/7`): re-analyse those dumps in isolation, even if they already have a write-up, then continue as usual.
 - `--redo`: also re-analyse dumps whose write-up has `status: in-progress`.
+- `--cross-all`: cross-analyse every dump again, not only the ones that need it.
+- `--groups`: skip stages 1 and 2 and only run stage 3 (group analysis for groups that are ready).
 
-Run all commands from the repository root.
+The pipeline has three stages. Each one only touches its own files:
+
+| Stage | Who | Reads | Writes |
+| --- | --- | --- | --- |
+| 1. Isolated analysis | `dump-analyst`, one per dump | that dump and its `chip.yml` | `analysis/<CHIP>/<N>.md`, `<N>.facts.yml`, `<N>/images/` |
+| 2. Cross-analysis | `site/compare.py`, then one `cross-analyst` | facts, fingerprints, write-ups, targeted byte ranges | `analysis/relations.yml`, `analysis/groups.yml` |
+| 3. Group analysis | `group-analyst`, one per ready group | the members' dumps and analyses | `analysis/groups/<slug>.md`, `analysis/groups/<slug>/images/` |
+
+Group analysis is expensive, so it runs rarely: only for groups with two or more members, only once **every** dump of every chip in the group is analysed and cross-analysed, and only when the group's members changed since its write-up. `site/graph.py groups` applies these rules; do not work around them.
+
+Run all commands from the repository root. If a script fails because PyYAML or Markdown is missing, install them with `pip install --user -r site/requirements.txt` (or use `uv run --with-requirements site/requirements.txt python3 ...`).
 
 ## 1. Check the folders against the inventory
 
@@ -20,73 +32,98 @@ Run all commands from the repository root.
 python3 site/inventory.py check --json
 ```
 
-The report has these lists:
-
 | Key | Meaning | What to do |
 | --- | --- | --- |
-| `new` | `.bin` on disk, not in the inventory | Analyse |
-| `unanalysed` | In the inventory, no `analysis/<CHIP>/<N>.md` | Analyse |
-| `in_progress` | Write-up exists but is not `status: done` | Analyse only with `--redo` or when named |
+| `new` | `.bin` on disk, not in the inventory | Analyse (stage 1) |
+| `unanalysed` | In the inventory, no write-up | Analyse (stage 1) |
+| `in_progress` | Write-up not `status: done` | Analyse only with `--redo` or when named |
+| `facts_missing` | Write-up done, no facts file | Analyse (stage 1): the write-up predates the facts file |
+| `not_cross_analysed` | Analysed, not cross-analysed | Cross-analyse (stage 2) |
 | `changed` | SHA-256 differs from the inventory | Ask the user before doing anything: the file may have been replaced by mistake |
 | `missing` | In the inventory, file gone | Report it; do not edit the inventory |
-| `chips_without_metadata` | Chip folder has no `chip.yml` | Create it in step 2 |
+| `chips_without_metadata` | Chip folder with dumps but no `chip.yml` | Create it first (below) |
 
-Tell the user in one or two lines what you found and how many dumps you are about to analyse. If there is nothing to analyse, say so and stop.
+Tell the user in one or two lines what you found: how many dumps go to stage 1, how many to stage 2, and whether any groups look ready. If there is nothing to do in any stage, say so and stop.
 
-If `site/inventory.py` fails because PyYAML or Markdown is missing, install them with `pip install --user -r site/requirements.txt` (or use `uv run --with-requirements site/requirements.txt python3 ...`).
+**Missing chip metadata.** For each folder in `chips_without_metadata`, look up the part number (datasheet search) and write `dumps/<CHIP>/chip.yml` in the same shape as `dumps/MBM29F016A/chip.yml`: `part`, `maker`, `kind`, `package`, `marking_line`, `sector_size` (bytes, only if sectors are uniform), `description`, and a `specs` map. Only state values you found in a datasheet; leave a field out rather than guess. Do this before stage 1, since the agents read it.
 
-## 2. Create missing chip metadata
+## 2. Stage 1: isolated analysis
 
-For each folder in `chips_without_metadata`, look up the part number (datasheet search) and write `dumps/<CHIP>/chip.yml` in the same shape as `dumps/MBM29F016/chip.yml`: `part`, `maker`, `kind`, `package`, `marking_line`, `sector_size` (bytes, only if sectors are uniform), `description`, and a `specs` map. Only state values you found in a datasheet; leave a field out rather than guess. Do this before starting the agents, since they read it.
-
-## 3. Send one sub-agent per dump
-
-Use the Agent tool with `subagent_type: "dump-analyst"`, one agent per dump. Keep up to 4 running at once: start the first 4 in a single message, then start the next queued dump as soon as any agent finishes, so 4 stay busy until the queue is empty. Process each agent's result (step 4) as it arrives instead of waiting for the whole run.
-
-Each agent starts with no context, so its prompt must contain:
-
-- The chip folder name, dump number, repo-relative path and SHA-256 (from the check report).
-- The full contents of `dumps/<CHIP>/chip.yml`.
-- The list of other dump paths for the same chip.
-- The paths of existing write-ups for that chip (`analysis/<CHIP>/*.md`, including `index.md`), so it can read them for context.
-- The `source` and `notes` fields from the inventory for that dump, if the user filled them in.
-- The output path: `analysis/<CHIP>/<N>.md`.
-- Today's date for the `updated` field.
-
-Do not include your own guesses about what the dump contains; let the agent look with fresh eyes.
-
-## 4. Check the results
-
-For each dump an agent reported on:
-
-1. Confirm `analysis/<CHIP>/<N>.md` exists and its front matter has `title`, `summary`, `status`, `tags`, `updated` and `model`. Fix small formatting problems yourself; if the file is missing or empty, note the failure and leave the dump out of step 5 so it shows up as new next time.
-2. If the agent saved images, check `analysis/<CHIP>/<N>/images/`. It should hold PNGs only, at most 12, each under 1 MB, plus a `captions.yml` that names every image. Delete anything else in the folder, such as raw extracted files or debug renders.
-3. Confirm the agent did not change anything under `dumps/` (compare `python3 site/inventory.py check --json` before and after: no new `changed` entries).
-
-## 5. Update the inventory
-
-Record each successfully analysed dump that was in the `new` list:
+**Prepare each dump.** If it already has output, delete it first so the agent starts clean and stale images cannot survive (git keeps the history):
 
 ```bash
-python3 site/inventory.py add MBM29F016/7 MBM29F016/8
+rm -rf analysis/<CHIP>/<N>.md analysis/<CHIP>/<N>.facts.yml analysis/<CHIP>/<N>/images
 ```
 
-This keeps any `source` and `notes` the user wrote by hand.
+Then clear its cross-analysis mark if it is in the inventory, because its facts are about to change: `python3 site/inventory.py cross --clear <CHIP>/<N>`.
 
-## 6. Merge cross-dump notes
+**Send the agents.** Use the Agent tool with `subagent_type: "dump-analyst"`, one agent per dump. Keep up to 4 running at once: start the first 4 in a single message, then start the next queued dump as soon as one finishes, so 4 stay busy until the queue is empty. Check each result as it arrives.
 
-Collect the "Cross-dump observations" from the agents' replies. If any are substantive, add them to `analysis/<CHIP>/index.md` under a dated `## YYYY-MM-DD` heading (create the file with front matter `title: <CHIP> notes` if it does not exist). Keep everything already in the file. If two agents disagree, record both views and what would settle it.
+Each agent starts with no context. Its prompt must contain only:
 
-When several dumps look like lanes of one wider bus, say which dumps, the probable lane order and the evidence.
+- The chip folder name, dump number, repo-relative path and SHA-256.
+- The full contents of `dumps/<CHIP>/chip.yml`.
+- The `source` and `notes` fields from the inventory for that dump, if the user filled them in.
+- The output paths: `analysis/<CHIP>/<N>.md` and `analysis/<CHIP>/<N>.facts.yml`.
+- Today's date for the `updated` field.
 
-## 7. Build the site
+Do not mention other dumps, earlier write-ups or your own guesses. The analysis must be isolated.
+
+**Check each result:**
+
+1. `analysis/<CHIP>/<N>.md` exists and its front matter has `title`, `summary`, `status`, `tags`, `updated` and `model`. Fix small formatting problems yourself.
+2. `analysis/<CHIP>/<N>.facts.yml` exists and `python3 site/graph.py check` reports no problems for it. Fix small YAML problems yourself.
+3. `analysis/<CHIP>/<N>/images/`, if present, holds PNGs only, at most 12, each under 1 MB, plus a `captions.yml` that names every image. Delete anything else, such as raw extracted files or debug renders.
+4. Nothing under `dumps/` changed: `python3 site/inventory.py check --json` shows no new `changed` entries.
+
+If the write-up or facts file is missing or empty, note the failure and leave the dump out of the rest of the run, so it shows up again next time.
+
+**Record and fingerprint** every dump that succeeded:
 
 ```bash
+python3 site/inventory.py add MBM29F016A/7 MBM29F016A/8     # only dumps from the `new` list; keeps hand-written fields
+python3 site/fingerprint.py MBM29F016A/7 MBM29F016A/8
+```
+
+## 3. Stage 2: cross-analysis
+
+Targets are every dump in `not_cross_analysed` plus every dump that finished stage 1 in this run (all analysed dumps with `--cross-all`). Skip this stage if there are none.
+
+1. Make sure every dump has a current fingerprint: `python3 site/fingerprint.py` (it only recomputes missing or stale ones).
+2. Write the comparator report for the targets to a scratch file outside the repo:
+
+   ```bash
+   python3 site/compare.py MBM29F016A/7 MBM29F016A/8 --json > "$SCRATCH/compare.json"
+   ```
+
+3. Start **one** `cross-analyst` agent (`subagent_type: "cross-analyst"`). Its prompt contains the list of target dumps, the path of the comparator report, and today's date. Only one cross-analyst runs at a time, because it edits shared files.
+4. When it finishes, run `python3 site/graph.py check`. If it reports problems in `relations.yml` or `groups.yml`, send them back to the same agent with SendMessage and ask it to fix them. Fix trivial YAML issues yourself.
+5. Mark the targets as cross-analysed: `python3 site/inventory.py cross MBM29F016A/7 MBM29F016A/8`.
+
+## 4. Stage 3: group analysis
+
+```bash
+python3 site/graph.py groups --json
+```
+
+For each group in `ready`, delete stale images first (`rm -rf analysis/groups/<slug>/images`), then start a `group-analyst` agent (`subagent_type: "group-analyst"`), up to 4 at once. Its prompt contains the group key, the group's full entry from `analysis/groups.yml` (paste it), the member dump paths, and today's date. Leave groups in `waiting` alone; report why they wait.
+
+Check each result: `analysis/groups/<slug>.md` exists, its front matter has `title`, `summary`, `status`, `tags`, `updated`, `model` and a `members` list equal to the group's members, and its images follow the same rules as in stage 1. If the agent reports that a membership or position looks wrong, tell the user; the next cross-analysis can correct it.
+
+## 5. Build the site
+
+```bash
+python3 site/graph.py check
 python3 site/build.py
 ```
 
-It must finish without errors. Do not commit or push unless the user asks.
+Both must finish without errors. Do not commit or push unless the user asks.
 
-## 8. Report
+## 6. Report
 
-Finish with a short table: dump, title, status, one-line summary. Then list any failures, `changed` or `missing` dumps that need the user's attention, and the cross-dump notes you added.
+Finish with:
+
+- A short table of dumps analysed in stage 1: dump, title, status, one-line summary.
+- New or superseded relations and group changes from stage 2, one line each.
+- Groups analysed in stage 3, and groups still waiting with the reason.
+- Failures, and any `changed` or `missing` dumps that need the user's attention.

@@ -14,6 +14,9 @@ ROOT = Path(__file__).resolve().parent.parent
 DUMPS_DIR = ROOT / "dumps"
 ANALYSIS_DIR = ROOT / "analysis"
 INVENTORY = DUMPS_DIR / "inventory.yml"
+RELATIONS = ANALYSIS_DIR / "relations.yml"  # cross-dump relations, written by the cross-analyst
+GROUPS_FILE = ANALYSIS_DIR / "groups.yml"  # group membership, written by the cross-analyst
+GROUPS_DIR = ANALYSIS_DIR / "groups"  # group write-ups, written by the group-analyst
 
 DUMP_NAME = re.compile(r"^(\d+)\.bin$")
 STRING_RE = re.compile(rb"[\x20-\x7e]{10,}")
@@ -107,6 +110,29 @@ def read_front_matter(path: Path) -> tuple[dict, str]:
 
 def analysis_path(chip: str, number: int) -> Path:
     return ANALYSIS_DIR / chip / f"{number}.md"
+
+
+def facts_path(chip: str, number: int) -> Path:
+    """Structured facts the dump-analyst extracted from this dump alone."""
+    return ANALYSIS_DIR / chip / f"{number}.facts.yml"
+
+
+def print_path(chip: str, number: int) -> Path:
+    """Fingerprint computed by site/fingerprint.py."""
+    return ANALYSIS_DIR / chip / f"{number}.print.json"
+
+
+def parse_ref(ref: str) -> tuple[str, int]:
+    """'MBM29F016A/7' -> ('MBM29F016A', 7)."""
+    chip, _, num = str(ref).partition("/")
+    if not chip or not num.isdigit():
+        raise ValueError(f"Not a dump reference: {ref!r}. Use CHIP/N, for example MBM29F016A/7.")
+    return chip, int(num)
+
+
+def all_dumps() -> list[tuple[str, int, Path]]:
+    """Every dump on disk as (chip folder, number, path)."""
+    return [(d.name, n, p) for d in chip_dirs() for n, p in dump_files(d)]
 
 
 GRID_ROWS = 8

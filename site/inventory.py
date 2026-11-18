@@ -4,10 +4,13 @@
   python3 site/inventory.py check [--json]   report new, changed, missing and unanalysed dumps
   python3 site/inventory.py add CHIP/N ...   record dumps in the inventory (keeps hand-written fields)
   python3 site/inventory.py sync             record every dump on disk that is not in the inventory yet
+  python3 site/inventory.py cross CHIP/N ... mark dumps as cross-analysed today
+  python3 site/inventory.py cross --clear CHIP/N ...   clear that mark (after re-analysing a dump)
 
 A dump is "new" when its file is on disk but not in the inventory, "changed" when its
 SHA-256 no longer matches, "missing" when the inventory lists it but the file is gone,
-and "unanalysed" when there is no analysis/<CHIP>/<N>.md for it.
+and "unanalysed" when there is no analysis/<CHIP>/<N>.md for it. "not_cross_analysed"
+lists analysed dumps that the cross-analyst has not compared with the rest yet.
 """
 
 from __future__ import annotations
@@ -25,6 +28,7 @@ from dumplib import (  # noqa: E402
     ROOT,
     analysis_path,
     chip_dirs,
+    facts_path,
     dump_files,
     read_front_matter,
     sha256_file,
@@ -63,7 +67,10 @@ def save(data: dict) -> None:
 
 def check() -> dict:
     inv = load()
-    report = {"new": [], "changed": [], "missing": [], "unanalysed": [], "in_progress": [], "chips_without_metadata": []}
+    report = {
+        "new": [], "changed": [], "missing": [], "unanalysed": [], "in_progress": [],
+        "facts_missing": [], "not_cross_analysed": [], "chips_without_metadata": [],
+    }
     seen = set()
     for chip_dir in chip_dirs():
         chip = chip_dir.name
@@ -88,6 +95,10 @@ def check() -> dict:
                 meta, _ = read_front_matter(ap)
                 if meta.get("status") != "done":
                     report["in_progress"].append({**item, "analysis": str(ap.relative_to(ROOT))})
+                elif not facts_path(chip, n).exists():
+                    report["facts_missing"].append(item)
+                elif n in known and not known[n].get("cross_analysed"):
+                    report["not_cross_analysed"].append(item)
     for chip, entry in inv["chips"].items():
         for n in entry.get("dumps", {}):
             if (chip, n) not in seen:
@@ -107,7 +118,7 @@ def add(specs: list[str]) -> list[str]:
         chip, _, num = spec.partition("/")
         path = ROOT / "dumps" / chip / f"{num}.bin"
         if not num.isdigit() or not path.is_file():
-            raise SystemExit(f"No dump at {path.relative_to(ROOT)}. Use CHIP/N, for example MBM29F016/7.")
+            raise SystemExit(f"No dump at {path.relative_to(ROOT)}. Use CHIP/N, for example MBM29F016A/7.")
         n = int(num)
         chip_entry = inv["chips"].setdefault(chip, {"dumps": {}})
         chip_entry.setdefault("dumps", {})
@@ -122,6 +133,24 @@ def add(specs: list[str]) -> list[str]:
     return done
 
 
+def mark_cross(specs: list[str], clear: bool = False) -> list[str]:
+    inv = load()
+    today = dt.date.today().isoformat()
+    done = []
+    for spec in specs:
+        chip, _, num = spec.partition("/")
+        entry = inv["chips"].get(chip, {}).get("dumps", {}).get(int(num)) if num.isdigit() else None
+        if entry is None:
+            raise SystemExit(f"{spec} is not in the inventory. Run `inventory.py add {spec}` first.")
+        if clear:
+            entry.pop("cross_analysed", None)
+        else:
+            entry["cross_analysed"] = today
+        done.append(spec)
+    save(inv)
+    return done
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -130,6 +159,9 @@ def main() -> None:
     a = sub.add_parser("add")
     a.add_argument("dumps", nargs="+", metavar="CHIP/N")
     sub.add_parser("sync")
+    x = sub.add_parser("cross")
+    x.add_argument("--clear", action="store_true")
+    x.add_argument("dumps", nargs="+", metavar="CHIP/N")
     args = ap.parse_args()
 
     if args.cmd == "check":
@@ -143,6 +175,8 @@ def main() -> None:
             "missing": "Missing (in inventory, file gone)",
             "unanalysed": "In inventory, no analysis yet",
             "in_progress": "Analysis not marked done",
+            "facts_missing": "Write-up done, facts file missing",
+            "not_cross_analysed": "Analysed, not cross-analysed yet",
         }
         for key, label in labels.items():
             items = r[key]
@@ -160,6 +194,9 @@ def main() -> None:
             print(f"Recorded {d}")
         if not new:
             print("Inventory already lists every dump on disk.")
+    elif args.cmd == "cross":
+        for d in mark_cross(args.dumps, args.clear):
+            print(f"{'Cleared' if args.clear else 'Marked'} {d}")
 
 
 if __name__ == "__main__":

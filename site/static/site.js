@@ -7,7 +7,7 @@ function markPixel(img) {
   };
   if (img.complete) check(); else img.addEventListener("load", check, { once: true });
 }
-document.querySelectorAll(".gallery img, .prose .inline-shot img").forEach(markPixel);
+document.querySelectorAll(".prose .inline-shot img").forEach(markPixel);
 
 let lightbox = null;
 let items = [];
@@ -74,11 +74,11 @@ document.addEventListener("click", (e) => {
   const shot = e.target.closest("a[data-lightbox]");
   if (shot && typeof HTMLDialogElement === "function" && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
     e.preventDefault();
-    // One entry per image: inline copies in the write-up share the gallery's entry.
+    // One entry per image, in page order, even if the write-up shows an image twice.
     const seen = new Map();
     document.querySelectorAll("a[data-lightbox]").forEach((a) => {
       const href = a.getAttribute("href");
-      if (!seen.has(href) || a.closest(".gallery")) seen.set(href, a);
+      if (!seen.has(href)) seen.set(href, a);
     });
     items = [...seen.values()];
     lightbox = lightbox || buildLightbox();
