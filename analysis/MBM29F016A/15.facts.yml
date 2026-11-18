@@ -1,0 +1,103 @@
+dump: MBM29F016A/15
+kind: whole-image
+bit_order: normal
+endianness: big
+architecture: "68k (CPU32 / MC68360 QUICC; bsr.l 61FF used, some a.out modules tagged mc68010)"
+identification:
+  device: "SII (Seiko Instruments) NS-2482 Communication Server / Multi Access Server (ISDN/frame-relay/PPP WAN router)"
+  maker: "Seiko Instruments Inc. (SII)"
+  confidence: high
+layout: >-
+  One quarter (chip index 3 of 4) of an 8 MB flash disk built from 128 x 64 KB units.
+  Every 64 KB sector is one unit: a 512-byte unit header (magic 24 11) then 127 data blocks of 512 bytes.
+  The logical disk is unit*127+block; at format time physical sector s held unit 4s+3 (other chips held 4s+0..4s+2).
+  Logical blocks 0-1015 (units 0-7) are a raw area before the filesystem; a simple Unix-like filesystem
+  ("ufs", magic 0x011954) starts at block 1017. Software 1997-10-29 Ver 2.2, version-ups 1998-08-31 and 1999-07-12.
+structures:
+  - offset: "0x000000"
+    type: "flash-unit header (repeated at the start of every 64 KB sector)"
+    detail: >-
+      bytes 0x00-0x13 constant: 24 11 00 80 00 00 00 80 00 01 00 80 00 01 02 00 00 40 00 20
+      (128 blocks/unit, 128 units, block size 0x200). +0x24 u16 logical unit number,
+      +0x26 u16 unknown counter (0 in never-rewritten units), +0x2C and +0x2E u16 erase count (two copies).
+      Units still at their factory position have 0x30-0x1FF zero; units rewritten in service have 0x40-0x1FF = FF.
+    raw: "24 11 00 80 00 00 00 80 00 01 00 80 00 01 02 00 00 40 00 20"
+  - offset: "0x000024"
+    type: "unit numbers per physical sector 0..31"
+    detail: "3,7,11,19,20,23,8,74,36,75,43,48,52,56,60,76,66,70,79,80,88,32,89,28,99,103,107,111,115,119,123,17; erase counts 1,1,1,2,2,1,31,9,2,4,1,2,2,2,2,5,3,4,3,3,8,4,4,2,1,1,1,1,1,1,1,6"
+  - offset: "0x060400"
+    type: "filesystem superblock (logical block 1017, unit 8)"
+    detail: >-
+      +4 magic 00011954; +0x0C total blocks 0x3B08 (15112); regions (start,len): inode bitmap 0x3FA/1,
+      block bitmap 0x3FB/4, inode table 0x3FF/0x2F3 (755 blocks, 3020 inodes of 128 bytes), data 0x6F2/0x380F;
+      +0x30 date 0096 0708 and +0x34 time_t 31E0BC72 (1996-07-08 07:44 UTC).
+    raw: "00 00 00 00 00 01 19 54 00 00 00 00 00 00 3B 08 00 00 03 FA 00 00 00 01 00 00 03 FB 00 00 00 04"
+  - offset: "0x061000"
+    type: "inode table start (inode 0 = root directory)"
+    detail: >-
+      128-byte inodes: +0 u16 type (0000 file, 0010 dir, 0020 symlink), +2 u16 mode as hex-coded octal (0755/0775/0777),
+      +4 u16 nlink, +0x0A u32 size, +0x12/+0x16/+0x1A u32 Unix times, +0x1E u32 block count,
+      +0x22 18 direct u32 block pointers, then single indirect and double indirect pointers. Inodes 0-479 are on this chip.
+    raw: "00 10 07 75 00 0F 00 00 00 00 00 00 04 00 00 00 00 00 31 E0 BC 72"
+  - offset: "0x1FB600"
+    type: "root directory, second block (logical block 0x8C9)"
+    detail: "32-byte entries: u32 inode + 28-byte name. Live: sbin(15) setup(16) share(17) stand(18) tmp(19) usr(20) vup(22) version(589) os_version(468); deleted entries init.root, ?sx.sys, os_version"
+  - offset: "0x083E00"
+    type: "compiled module header (/sbin/led)"
+    detail: "magic AB CD 02 00, section names code/const/string/data; 68k code inside. Interpreted scripts use a $-builtin language ($PLUGIN, $BIND, $PUSH, $SYS)"
+    raw: "AB CD 02 00 05 32 00 00 06 55 06 55 06 55 00 04"
+  - offset: "0x04BE00"
+    type: "a.out OMAGIC executable (/bin/ps, probably)"
+    detail: "machine 1 (mc68010), magic 0407, text 0x1A20, data 0x22C, bss 0xC, trsize 0x570"
+    raw: "00 01 01 07 00 00 1A 20 00 00 02 2C 00 00 00 0C"
+  - offset: "0x000400"
+    type: "unidentified 13 KB binary in raw pre-filesystem area (logical blocks 382-409)"
+    detail: "not 68k; contains ASCII letters in scrambled order (no byte stride 1-16 or low address-bit permutation makes it readable)"
+strings_of_note:
+  - offset: "0x1FC400"
+    text: "#   Communication Server NS-2482 System Software 1997.10.29 (Ver 2.2)"
+  - offset: "0x15F030"
+    text: "SysDescr     \"SII Multi Access Server NS-2482.\""
+  - offset: "0x15F060"
+    text: "sysObjectID  263.2.1"
+  - offset: "0x084E43"
+    text: "#/***** NS-2282MH *****/"
+  - offset: "0x1F0720"
+    text: "Pocvup version 1.0 start."
+  - offset: "0x1F07E8"
+    text: "POC-IDL Ver 2.1"
+  - offset: "0x0DD90A"
+    text: "(system image for versionup.)"
+  - offset: "0x08BA86"
+    text: "Extended POC version."
+  - offset: "0x08DAF6"
+    text: ">>> Version 1.0 ('95/09/05)"
+  - offset: "0x1FFEE0"
+    text: "QUICC#"
+  - offset: "0x117400"
+    text: "#\tinit.boot (start up script)"
+wanted:
+  - id: ns2482-flashdisk-units-0mod4
+    what: "Flash-disk units originally numbered 4s+0 (chip index 0 of the 4-chip set)"
+    look_for: "2 MB image whose every 64 KB sector starts 24 11 00 80 00 00 00 80 00 01 00 80 00 01 02 00 00 40 00 20, with unit numbers (u16 at +0x24) 0,4,8... in sectors that still have erase count 1"
+    why: "holds the other quarter of the NS-2482 flash disk, including logical unit 0 of the raw boot area"
+  - id: ns2482-flashdisk-units-1mod4
+    what: "Flash-disk units originally numbered 4s+1 (chip index 1)"
+    look_for: "same 0x2411 unit header; unit numbers 1,5,9,13... in ec=1 sectors"
+    why: "includes inode-table units 9 and 13 (inodes 480-987: /sbin, /share and /version entries that this chip lacks)"
+  - id: ns2482-flashdisk-units-2mod4
+    what: "Flash-disk units originally numbered 4s+2 (chip index 2)"
+    look_for: "same 0x2411 unit header; unit numbers 2,6,10,14... in ec=1 sectors"
+    why: "includes inode unit 10 and unit 14, which holds the first root-directory block (logical block 0x6F2) and the start of the data area"
+  - id: ns2482-raw-boot-area
+    what: "Raw area before the filesystem, logical blocks 0-1015 (units 0-7)"
+    look_for: "units 0,1,2,4,5,6 (on the partner chips) with the same scrambled-ASCII binary seen at 0x000400 here, or a boot/extended-POC image"
+    why: "probably the boot or Extended POC image; only units 3 and 7 are here and they are almost empty"
+  - id: ns2482-version-files
+    what: "/version (inode 589) and /os_version (inode 468) contents"
+    look_for: "inode table units 9/10/13 and the blocks they point to; text like 'Communication Server NS-2482 System Software ... (Ver x.x)'"
+    why: "dates the 1999-07-12 software update installed on this unit"
+  - id: ns2482-boot-prom
+    what: "Boot PROM (POC) of the NS-2482"
+    look_for: "68k (CPU32/MC68360) boot code with strings 'POC', 'Pocvup', 'bootconf', BDEV boot-device selection (2 = memory card, 3 = flash ROM)"
+    why: "the flash disk is loaded by a separate POC monitor that is not on this chip"

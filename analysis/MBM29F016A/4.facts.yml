@@ -1,0 +1,70 @@
+dump: MBM29F016A/4
+kind: byte-lane
+bus:
+  width_bits: 32
+  stride: 4
+  lane: 2
+  lane_evidence: "Untouched FS units carry ids 4*sector+2 (0x02, 0x06, 0x0A, 0x62..0x7E). The sector 0 boot image equals bytes at offsets = 2 mod 4 of the copy inside the pocvup file (file offset = 0x10CCDA + 4*chip offset). The ctype table is sampled at entries 2, 6, 10..."
+bit_order: normal
+endianness: big
+architecture: "68k: MC68360 QUICC (CPU32+), code uses 68020 BSR.L"
+identification:
+  device: "SII (Seiko Instruments) NS-2482 Multi Access Server / communication server"
+  maker: "Seiko Instruments Inc. (SII)"
+  confidence: high
+layout: "Each 64 KB sector is an FS unit: a 64-byte header, then 127 x 512-byte blocks, with obsolete blocks zeroed. Sector 0 blocks 2-27 hold a lane-split (stride 4) boot image POC-IDL Ver 3.0. Sectors 3-23 hold live per-chip file data (stride 1). Sectors 1, 2 and 24-31 are header plus zero."
+structures:
+  - offset: "0x000000"
+    type: "FS unit header (in every sector, not lane-split)"
+    detail: "Constant first 0x24 bytes. +0x24 u16 unit id (initially 4*sector+2), +0x26 u16 counter, +0x2C/+0x2E u16 repeated value. Rest of the header block is FF (rewritten unit) or 00 (original)."
+    raw: "24 11 00 80 00 00 00 80 00 01 00 80 00 01 02 00 00 40 00 20"
+  - offset: "0x000400"
+    type: "lane-split 68k boot image POC-IDL Ver 3.0 (lane 2 of 4)"
+    detail: "Chip offsets 0x400-0x3876 = CPU bank offsets 0x1002-0xE1DA step 4. A full copy is inside the pocvup file at 0x110EDA..0x11B2xx (stride 1)."
+    raw: "46 7A 2A 40 61 03 00 00 F4 00 F4 61 4E F4 4E 00"
+  - offset: "0x000E60"
+    type: "C ctype table, lane-split"
+    detail: "Standard 257-entry ctype table sampled at entries 2, 6, 10..."
+    raw: "00 20 20 28 28 20 20 20 20 10 10 10 10 04 04 04 10 81 81 01"
+  - offset: "0x160200"
+    type: "directory block (root)"
+    detail: "32-byte entries: u32 inode, 28-byte name. Entries: . .. admin(1) bin(2) boot.3rd(440) bootconf(4) driver(5) etc(6) init(7) init.root(466) mnt(9) mnt2(10) mnt3(11) nsx.sys(467) pocvup(469) save(14). Continuation blocks are not on this chip."
+  - offset: "0x164E00"
+    type: "directory block (/driver)"
+    detail: "MCardI.drv QCH.drv QMC.drv am.drv e2prom.drv en.drv en960.drv fifo.drv fr.drv frnet.drv ip.drv ipnhr.drv l2ctl.drv l2hsd.drv ..."
+  - offset: "0x03F400"
+    type: "ABCD load-module header (59 instances at 512-byte block starts)"
+    detail: "Segment name at +0x50 (code/ram); size fields at +0x2C..+0x37"
+    raw: "AB CD 02 00 05 32 00 00 06 55 06 55 06 55 00 04"
+strings_of_note:
+  - offset: "0x149000"
+    text: "#   Communication Server NS-2482 System Software 1998.08.31 (Ver 3.1)"
+  - offset: "0x11D9FE"
+    text: "SysDescr     \"SII Multi Access Server NS-2482.\""
+  - offset: "0x162C71"
+    text: "3rd Boot version 1.2 start."
+  - offset: "0x162C8D"
+    text: "check 2nd Boot version number NG."
+  - offset: "0x110B20"
+    text: "Pocvup version 1.0 start."
+  - offset: "0x110BE8"
+    text: "POC-IDL Ver 3.0 "
+  - offset: "0x038963"
+    text: "CICR  %08X %08X %08X"
+  - offset: "0x038DE9"
+    text: "[OS-res-loader:load %s at %08x (size %x)]"
+  - offset: "0x142C9F"
+    text: "#---- SI(QUICC Serial Interface)"
+  - offset: "0x145E59"
+    text: "#--------- obsolete 1998.3.11 ----"
+  - offset: "0x11ADC7"
+    text: "CCITT Recommendation G.703"
+wanted:
+  - id: poc-idl-other-lanes
+    what: "Lanes 0, 1 and 3 of the POC-IDL Ver 3.0 boot image in sector 0 (chip offsets 0x400-0x3876)"
+    look_for: "Sector 0 with a 24 11 00 80 unit header (unit id 0x0000, 0x0001 or 0x0003), zero to 0x400, then high-density lane-split 68k code ending near 0x3876"
+    why: "Interleaving the four lanes rebuilds the boot program at CPU 0x1000 and its entry point"
+  - id: fs-other-chips
+    what: "The other three chips of the same file-system volume (128 units in total)"
+    look_for: "MBM29F016A images where every sector starts with 24 11 00 80 00 00 00 80 00 01 00 80 00 01 02 00 00 40 00 20, with untouched unit ids 4*sector+{0,1,3}, ABCD 0200 file headers and NS-2482 strings"
+    why: "Holds the rest of the directory blocks, inode and block-map data, and the remaining parts of nsx.sys and other files"

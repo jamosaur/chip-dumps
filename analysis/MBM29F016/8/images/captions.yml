@@ -1,1 +1,0 @@
-lane-stride4-hexdump.png: "Text lane at 0x110411 (D0/D2 swapped back): 130 chip bytes shown as stored, then placed every 4th position, where they line up as 65-character hex-dump lines from four interleaved chips."

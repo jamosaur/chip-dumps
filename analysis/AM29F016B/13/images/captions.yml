@@ -1,0 +1,1 @@
+sector-map.png: Content map of the whole 2 MB lane image, one row per 64 KB sector and one cell per 256 bytes, classified as erased, zero-filled, PowerPC code, big-endian ARM code, lane-split text or other data.

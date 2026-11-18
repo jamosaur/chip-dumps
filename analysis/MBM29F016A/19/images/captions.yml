@@ -1,0 +1,1 @@
+block-map.png: Map of all 32 sectors (rows) by 128 512-byte blocks, labelled with each unit's logical number, generation and status from its header; data blocks, the inode records at 0x100200, the lane-split 68k image at 0x000400 and zero-filled blocks are coloured.

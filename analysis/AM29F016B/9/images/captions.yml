@@ -1,0 +1,1 @@
+block-map.png: Map of the whole chip in 1 KB blocks after bit reversal, classed as code/data, text-rich, sparse FF-filled tables, zero-filled or erased; the IOS image ends at 0x12AFD5.

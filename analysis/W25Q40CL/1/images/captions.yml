@@ -1,1 +1,1 @@
-flash-layout-map.png: Page-by-page map of the 512 KB image (one cell per 256 bytes) showing the 16 KB common area at 0x000000, four 48 KB 8051 code banks from 0x004000, and the erased space from 0x02F9E0.
+flash-bank-map.png: Map of the whole 512 KB image in 256-byte cells, one row per 16 KB, showing the 16 KB common area at 0x000000, the four 48 KB code banks from 0x004000 and the erased space from 0x02F9E0.

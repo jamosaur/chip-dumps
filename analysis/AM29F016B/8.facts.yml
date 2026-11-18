@@ -1,0 +1,85 @@
+dump: AM29F016B/8
+kind: byte-lane
+bus:
+  width_bits: 32
+  stride: 4
+  lane: 2
+  lane_evidence: "32 longword string pointers at 0x03EF81-0x03EFA0 read BC x17 then BD x15 (after bit reversal); the strings they follow sit at chip 0x03EF00-0x03EF80 = CPU bank offset 0x0FBC00-0x0FBDFF, so this lane carries pointer bits 15-8. Byte distribution is 68k opcode HIGH bytes (even-address byte), which rules out lanes 1 and 3; lane 0 would show a constant pointer MSB. CPU address = bank base + chip offset*4 + 2."
+bit_order: "fully reversed: D0<->D7, D1<->D6, D2<->D5, D3<->D4 (reverse every byte before analysis)"
+endianness: big
+architecture: "68k with 32-bit bus (68020/030/040, CPU32 or ColdFire); no FPU use seen"
+identification:
+  device: null
+  maker: null
+  confidence: low
+layout: "0x000000-0x017FFF structured data (period 3 in lane = 12-byte records, many FF); 0x018000-0x01F7FF table data; 0x01F800-0x01FBBF erased; 0x01FBC0-0x1FFFFF 68k code lane with strings, no padding at end"
+structures:
+  - offset: "0x000000"
+    type: "header-like block at start of bank, not a vector table"
+    detail: "52 bytes then FF to 0x00008E; reversed: 0B DB FF 00 35 6A 73 31 31 69 FF FF FF FF FF FF 01 3E 9D 04 00..."
+    raw: "D0 DB FF 00 AC 56 CE 8C 8C 96 FF FF FF FF FF FF 80 7C B9 20"
+  - offset: "0x01FBC0"
+    type: "start of 68k code lane"
+    detail: "reversed: AD 00 2F 00 48 3E 00 4F 72 67 72 67 72 6D 00 72; first repeated literal follows at 0x01FC0D"
+  - offset: "0x01FC0D"
+    type: "repeated 44-byte string literal, emitted twice in a row (lane-split)"
+    detail: "lane text 'sCSrne mmve' x2; 120 occurrences in the image, usually right after code; probably a source-file/ID string"
+    raw: "CE C2 CA 4E 76 A6 04 B6 B6 6E A6"
+  - offset: "0x02AF38"
+    type: "banner text (lane-split), likely version/copyright"
+    detail: "lane text 'CCrt)dNo  89Artev' 'Roi  gerL1-8lisse' 'EMeRscu2. l2V gTaalv8 i0'; 'Crt)' fits 'Copyright (c)'"
+    raw: "C2 C2 4E 2E 94 26 72 F6 04 04 1C 9C"
+  - offset: "0x02B166"
+    type: "second banner text (lane-split)"
+    detail: "lane text 'Cd85Cdeo.0i1:2D19Crt)dNo .9 LISSE', followed by F0 fill"
+    raw: "C2 26 1C AC C2 26 A6 F6 74 0C 96 8C"
+  - offset: "0x03EF00"
+    type: "upper-case identifier strings (lane-split)"
+    detail: "lane text 'N.LT.LIVAENUAP.LLRUFDA5LRNARI.N_U.C_CLCESN_U.CEIUFDA1APISEREUFDA1EEQTDNSE...EIDTTESEIEQTOASE'"
+    raw: "72 00 32 2A 00 32 92 6A 82 A2 72 AA"
+  - offset: "0x03EF81"
+    type: "32-entry longword string-pointer table (lane 2 = pointer bits 15-8)"
+    detail: "values BC x17, BD x15 after reversal; targets the strings at 0x03EF00"
+    raw: "3D x17, BD x15"
+  - offset: "0x023F1A"
+    type: "upper-case enum/name list (lane-split)"
+    detail: "lane text 'NQTMTDSCSSSIRTCBNMT_OWGD EOFANMARRFUMRASETnwr'"
+    raw: "72 8A 2A B2 2A 22 CA C2 CA CA CA 92"
+strings_of_note:
+  - offset: "0x01FC0D"
+    text: "sCSrne mmvesCSrne mmve (every 4th char, x120)"
+  - offset: "0x02AF38"
+    text: "CCrt)dNo  89Artev (every 4th char)"
+  - offset: "0x02AF4A"
+    text: "Roi  gerL1-8lisse (every 4th char)"
+  - offset: "0x02AF5C"
+    text: "EMeRscu2. l2V gTaalv8 i0 (every 4th char)"
+  - offset: "0x02B166"
+    text: "Cd85Cdeo.0i1:2D19Crt)dNo .9 LISSE (every 4th char)"
+  - offset: "0x0204C9"
+    text: "BN%d%poiizooirt%opa, fer%vler%xf%ht, b (every 4th char)"
+  - offset: "0x03EF00"
+    text: "N.LT.LIVAENUAP.LLRUFDA5LRNARI.N_U (every 4th char)"
+  - offset: "0x1FFF5E"
+    text: "lTt,sdtU ndaEyRr r (every 4th char, near end of chip)"
+wanted:
+  - id: lane-0-d31-d24
+    what: "Lane 0 (D31-D24) of the same 8 MB bank: 68k opcode high bytes of words at CPU addresses 4n, every 4th text character at 4n"
+    look_for: "AM29F016B-sized lane with the same bit reversal; reversed bytes show 68k opcode high bytes (2F 61 67 4A 48 4E); at chip 0x03EF81-0x03EFA0 a constant pointer MSB; text interleaves with 'sCSrne mmve' at 0x01FC0D"
+    why: "with this chip, gives every even-address byte; together with lanes 1 and 3, the full firmware"
+  - id: lane-1-d23-d16
+    what: "Lane 1 (D23-D16): opcode low bytes of words at 4n, pointer bits 23-16"
+    look_for: "same bit reversal; low-byte distribution (75 B9 56 E7 8F 00); a 44-byte literal repeated ~120 times starting at chip 0x01FC0D"
+    why: "needed to reassemble 68k instructions and strings"
+  - id: lane-3-d7-d0
+    what: "Lane 3 (D7-D0): opcode low bytes of words at 4n+2, pointer bits 7-0"
+    look_for: "same bit reversal; at 0x03EF81-0x03EFA0 the low bytes of 32 string pointers into 0x0FBC00-0x0FBDFF; 120 copies of a repeated literal from 0x01FC0D"
+    why: "completes the 32-bit words; with lanes 0-2 lets the banner at CPU bank offset 0x0ABCE0 be read"
+  - id: boot-vectors
+    what: "68k reset/exception vector table and early boot code"
+    look_for: "a bank or boot EPROM at CPU address 0 whose first 8 bytes give an SSP and a PC; this bank does not start with a vector table"
+    why: "gives the memory map and the bank base address"
+  - id: code-continuation
+    what: "Possible continuation of the firmware past CPU bank offset 0x7FFFFF"
+    look_for: "another 4-chip lane set with the same bit reversal whose start continues 68k code without a header"
+    why: "the code lane runs to 0x1FFFFF with no erased padding, so the image may not end in this bank"

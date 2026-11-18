@@ -1,0 +1,1 @@
+sector-map.png: Content class of every 256-byte block, one row per 64 KB sector from 0x000000 to 0x1FFFFF; only the first 640 KB is used.

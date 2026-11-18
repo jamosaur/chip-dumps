@@ -1,1 +1,0 @@
-sector-map.png: Sector map of the whole chip, one row per 64 KB sector and one cell per 256 bytes; grey is erased (FFh), blue is low entropy, orange is high entropy. Content sits in 0x000000–0x09E4C0 only.

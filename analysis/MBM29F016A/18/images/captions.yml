@@ -1,0 +1,1 @@
+block-map.png: Lane-view block map of the whole chip in 4 KB cells, coloured by SH code-idiom density (code to 0x1A1800 and 0x1F1F00-0x1F3F49, data tables between, erased tail).

@@ -1,0 +1,1 @@
+flash-layout-map.png: "Region map of the whole 2 MB image (0x000000-0x1FFFFF): directory, LZW boot and SVP objects, 46 gzip i960 COFF modules, zero fill and the unerased 1998 leftovers."

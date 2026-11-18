@@ -1,0 +1,1 @@
+block-map.png: Map of all 32 × 64 KB sectors in 512-byte blocks, showing the unit headers, the lane-split boot image at 0x000400, 68k code, ABCD file headers, scripts, directories and zeroed (obsolete) blocks.

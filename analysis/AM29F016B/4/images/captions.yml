@@ -1,0 +1,1 @@
+chunk-map.png: Map of the whole 2 MB chip, one row per 64 KB sector, coloured by decoded "$y?$" chunk type and fill (128 bytes per pixel column, 2x scale).

@@ -1,0 +1,72 @@
+dump: MBM29F016A/18
+kind: byte-lane
+bus:
+  width_bits: 16
+  stride: 2
+  lane: 0
+  lane_evidence: "Holds the high (opcode) byte of every SH instruction, and all 66 RCS '$Header' strings start at even chip offsets (4-byte-aligned CPU addresses), so this is the even-address byte, D15-D8, of a big-endian SH bus"
+bit_order: normal
+endianness: big
+architecture: "Hitachi SuperH, SH-1 or SH-2 (no bt/s or bf/s use, no FPU)"
+identification:
+  device: "Japanese embedded product c. 1996-98 with a ~4 MB SH firmware (car navigation, office equipment or amusement machine are candidates)"
+  maker: null
+  confidence: low
+layout: "Header with AAh markers and a 256-entry vector table, SH code to 0x1A1838, data tables to 0x1F0000, Shift-JIS strings, a second small code block to 0x1F3F49, erased to 0x1FFFE8, AAh trailer"
+structures:
+  - offset: "0x000000"
+    type: "image header (lane-split)"
+    detail: "AA x8, parameter bytes, then marker AA AA BB BB CC CC DD DD at 0x000018 and again at 0x000032; between them 00 28 97 C6 00 02 D6 6E 00 10 D2 F1 00 06 7B 19 00 0C (half of each original word)"
+    raw: "AA AA AA AA AA AA AA AA 12 56 0A 01 8B 00 03 FF 00 00 00 FF 00 FF 00 00 AA AA BB BB CC CC DD DD"
+  - offset: "0x00003A"
+    type: "SH exception vector table, 256 x 32-bit (bytes 0 and 2 of each entry here)"
+    detail: "CPU offset 0x74; v0 = 00 ?? 04 ??, v1 = 00 ?? 00 ??, v2 = 00 ?? 04 ??, v3 = 00 ?? 00 ??; v4-v255 mostly 00 ?? 15..19 ?? pointing to default stubs; specials e.g. v8=0021, v57=0030, v58=002F, v59=000D, v60=000E"
+    raw: "00 04 00 00 00 04 00 00 00 15 00 15"
+  - offset: "0x000AE4"
+    type: "252 default exception stubs (bra handler / mov #vec,r4)"
+    detail: "A1 E4 x126 then A0 E4 x126, CPU 0x15C8-0x19B7; byte 2 of the vector entries equals bits 15-8 of these CPU addresses, so the image runs at the CPU offsets it implies (base low 16 bits zero)"
+    raw: "A1 E4 A1 E4 A1 E4"
+  - offset: "0x000E7C"
+    type: "about 30 interrupt wrappers saving and restoring all registers"
+    detail: "lane pattern '` o//////////////OOO' ... 'OOOabcdefghijklmno`' repeated"
+  - offset: "0x01003C"
+    type: "first RCS $Header string (even characters only)"
+    detail: "66 such strings in all; version and date digits partly visible; years 1996 and 1997"
+    raw: "24 65 64 72 20 64 63 76 31 32 39 2F"
+  - offset: "0x1F15EA"
+    type: "Shift-JIS string table (lead bytes only)"
+    detail: "runs of 81-98 lead bytes with 00 padding and 0C bytes; Japanese text"
+  - offset: "0x1F1F00"
+    type: "second SH code block"
+    detail: "runs to 0x1F3F49 (CPU ~0x3E3E00-0x3E7E92); literal pools point back into the main program"
+  - offset: "0x1FFFE8"
+    type: "image trailer"
+    raw: "00 00 2D 2D 2D 2D 00 82 00 00 2D 2D 2D 2D 00 82 AA AA AA AA AA AA AA AA"
+strings_of_note:
+  - offset: "0x01003C"
+    text: "$edr dcv129/32 31:2aizm dtl$"
+  - offset: "0x012BC0"
+    text: "$edr tptlcv119/80 32:4lso x "
+  - offset: "0x0205A0"
+    text: "$edr igck., . 61/52:32 riuiEp$"
+  - offset: "0x02DC0A"
+    text: "$edr dfitkcv12 60/51:21 riuiEp$"
+  - offset: "0x1A1CEE"
+    text: "$edr vdpmpsso., .29/41 03:5acoeEp$"
+  - offset: "0x1A748E"
+    text: "$edr a_accv11 70/52:05 lyn x "
+  - offset: "0x1B588A"
+    text: "ACLCSDRVSp2 972:80"
+  - offset: "0x1B589E"
+    text: "$edr h_r., . 70/92:91 aaaEp$"
+  - offset: "0x1B56F0"
+    text: "$edr rc20cv129/90 10:5mia x "
+  - offset: "0x1DB750"
+    text: "$edr n_rpmcv119/21 83:5ueaEp$"
+  - offset: "0x1F3F28"
+    text: "$edr v_a_rmcv139/22 40:0acoeEp$"
+wanted:
+  - id: sh-odd-lane
+    what: "Odd-address byte lane (D7-D0) of the same 16-bit SH program: low bytes of every instruction, the odd characters of every string, bytes 1 and 3 of every pointer"
+    look_for: "2 MB chip with the same layout (code to ~0x1A1838, data to 0x1F3F49, FF tail). At 0x000AE5, 0x000AE7, ... the mov #imm,r4 immediates 04, 05, 06 ... FF; 22 after each prologue 4F (sts.l pr), 0B/09 at call sites (jsr @r3 / nop); at 0x01003C the odd characters of '$Header: ' ('Hae:'); probably AA/BB/CC/DD markers at 0x000000/0x000018/0x000032"
+    why: "Interleaving gives the full 4 MB image: readable RCS paths, authors and Japanese messages, full vectors and the flash base address"

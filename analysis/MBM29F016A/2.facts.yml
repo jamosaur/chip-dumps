@@ -1,0 +1,64 @@
+dump: MBM29F016A/2
+kind: byte-lane
+bus:
+  width_bits: 24
+  stride: 3
+  lane: null
+  lane_evidence: "Only the upper 1 MB (0x100000-0x1FFFFF large-font region) is lane-split: 32-byte cells hold 8 pixel columns of a ~24-row glyph. Width 24 / 3 lanes is a guess from the ~24-row glyph height; 32-bit / 4 lanes is not excluded. The lower 1 MB (16x16 font) is complete on this chip."
+bit_order: normal
+endianness: big
+architecture: "none (font and table data only, no code)"
+identification:
+  device: "Chinese-market serial text terminal (VT220/ANSI/SCO console emulation, GBK), character-generator flash"
+  maker: null
+  confidence: medium
+layout: "Lower 1 MB: 8x16 terminal sets + complete 16x16 GBK font, left halves at 0x000000 and right halves at 0x080000 (A19 = half select), cell = 704 + GBK index, 16 bytes/cell. Upper 1 MB: same cell index, 32 bytes/cell, one 8-pixel column lane of a larger (probably 24-dot) font at 0x100000; last sector holds a GB2312 code table at 0x1F0000, small compressed-looking records at 0x1F4F00, lane-format national sets at 0x1F5800 and 8x16 Russian/hiragana/katakana sets at 0x1FA5D0. Unused space is 00, not FF."
+structures:
+  - offset: "0x000000"
+    type: "8x16 single-width sets, bank 0 (cells 0-511, 4 x 128)"
+    detail: "set0 control pictures (NU SH SX ...) + ASCII + DEL glyph; set1 control pictures + ASCII + DEC Special Graphics at 0x60-0x7E; set2 box/block graphics, numbers 0-20, 1/2 1/4; set3 C1 control pictures + ISO 8859-1 0xA0-0xFF"
+    raw: "00 88 C8 A8 98 88 88 88 00 22 22 22 22 22 22 1C"
+  - offset: "0x080000"
+    type: "8x16 single-width sets, bank 1 (cells 0-511)"
+    detail: "sets 0-1 ASCII with DEC graphics glyphs in 0x00-0x1F; sets 2-3 full IBM CP437"
+    raw: "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 10 10 38 38 7C 7C FE"
+  - offset: "0x002C00"
+    type: "16x16 GBK font, left halves (bank 0); right halves at 0x082C00 (bank 1)"
+    detail: "cell = 704 + (lead-0x81)*191 + (trail<0x80 ? trail-0x40 : trail-0x41); offset = cell*16 (+0x80000 for right half). 0x8140 at 0x002C00, B0A1 at cell 9777 (0x026310). Ends at FEA0 (last byte 0x060629 / 0x0E0629). User areas AAA1-AFFE and F8A1-FEFE blank."
+  - offset: "0x01AA00"
+    type: "GBK user area A140-A7A0 filled with copies"
+    detail: "A1->AC, A2->AD, A3->AE, A4->AF, A5->F8, A6->F9, A7->FA (trail 40-A0 copied byte-for-byte); present in both the 16-dot font and the large-font lane; font-builder fingerprint"
+  - offset: "0x100000"
+    type: "large-font column lane (32 bytes/cell, same cell index as 16x16 font)"
+    detail: "one byte per row, rows 0-25 used (glyph rows ~1-24); 8 of the glyph's pixel columns, sampled across most of the width (box drawing: horizontal line fills bits 0-7, vertical at bit 3; thin verticals of 口/日 missing). Half-width ASCII-based cells duplicate one nibble into both halves. Ends at FEA0 (last non-zero 0x1C0C4E)."
+    raw: "H (cell 0x48): 00 00 00 EE CC CC ... CC EE 00 ..; 十: 00 10 10 10 10 10 10 10 10 10 1C FE 10 .."
+  - offset: "0x1F0000"
+    type: "GB2312 code table, 9,728 big-endian 2-byte entries, 0x2020 = blank"
+    detail: "entries ordered like Unicode CJK (Kangxi radical order) of traditional forms, values are simplified GB2312 codes (並->并, 丟->丢, 亂->乱); index scheme unknown (not GBK-, Big5- or direct-Unicode-indexed)"
+    raw: "20 20 D2 BB B6 A1 C6 DF D5 C9 C8 FD C9 CF CF C2"
+  - offset: "0x1F4F00"
+    type: "compressed-looking records with GB2312 row A4-A7 codes"
+    detail: "e.g. 03 2F 00 A6A4 A6AF A6CF 11 3E 00 A6A3 21 5A 00 A6A9 31 7A 00; blocks at 0x1F4F00, 0x1F5000, 0x1F5150; probably LZ-compressed national-charset mapping tables"
+    raw: "03 2F 00 A6 A4 A6 AF A6 CF 11 3E 00 A6 A3 21 5A"
+  - offset: "0x1F5800"
+    type: "national sets in large-font lane format (32-byte cells)"
+    detail: "Russian/kana half-width glyphs, lane-split like 0x100000"
+  - offset: "0x1FA5D0"
+    type: "8x16 national replacement sets, glyph 0x20 at 0x1FA5D0 / 0x1FADD0 / 0x1FB5D0 (stride 0x800)"
+    detail: "Russian KOI-7 style (Ю А Б Ц Д Е Ф Г ...), hiragana, katakana; 0x20-0x7F only"
+strings_of_note:
+  - offset: "0x1F0000"
+    text: "  一丁七丈三上下不丐丑且丕世丙丞丢并  丨个丫中丰  串"
+wanted:
+  - id: font24-other-lanes
+    what: "The remaining pixel-column lanes of the large GBK font whose one lane is at 0x100000-0x1C0C5F here"
+    look_for: "Upper 1 MB (or any region) with 32-byte cells, 0x8140 at cell 704 (offset base+0x5800), glyph rows 1-24, ending at cell for FEA0 (base+0xC0C40..0xC0C5F); half-width ASCII cells with duplicated nibbles; same user-area A1->AC copies"
+    why: "interleaving the lanes gives the complete 24-dot (or 32-dot) glyphs and settles the bit-to-column mapping"
+  - id: national-lane-partners
+    what: "Partner lanes of the lane-format national sets at 0x1F5800-0x1FA5CF"
+    look_for: "32-byte-cell Russian/kana half-width slices near the top of a 2 MB chip, next to an 8x16 national-set block at 0x1FA5D0"
+    why: "completes the large-font Russian/Japanese sets"
+  - id: terminal-firmware
+    what: "The terminal's controller firmware (separate EPROM/flash)"
+    look_for: "code that computes 704 + GBK index, handles VT220/ANSI/SCO escape sequences, and reads a 2-byte GB table at 0x1F0000 of the font chip"
+    why: "identifies the terminal model and explains the 0x1F0000 table index and the 0x1F4F00 records"

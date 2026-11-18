@@ -1,8 +1,0 @@
-terminal-8x16-sets-a.png: "8×16 sets A0 and A1 at 0x000000–0x001FFF (512 glyphs): VT220 control-character pictures, ASCII, DEC Special Graphics, box-drawing pieces and Latin-1."
-terminal-8x16-sets-b-cp437.png: "8×16 sets B0 and B1 at 0x080000–0x081FFF (512 glyphs): DEC Special Graphics with ASCII, then a complete IBM CP437 set."
-gbk-16x16-gb2312-row-b0.png: "GBK 16×16 font, row B0 (啊阿埃挨…), with left halves from 0x002BF0 and right halves from 0x082BF0 paired, at 3× scale."
-gbk-16x16-symbols-a1-a3.png: "GBK 16×16 font, GB2312 symbol row A1 and full-width ASCII row A3, halves from 0x000000 and 0x080000 planes paired, at 3× scale."
-gbk-16x16-gbk3-start-8140.png: "Start of the GBK/3 extension at code 8140 (丂丄丅丆…), from 0x002BF0 and 0x082BF0, at 3× scale."
-gbk-16x16-user-area-a140.png: "Normally-empty GBK user area A140–A4A0, here filled with radical-grouped traditional characters (halves from 0x01A9F0 and 0x09A9F0 paired), at 2× scale."
-font24-slice-row-b0.png: "One 8-pixel column slice of the 24-row GBK font for codes B0A1–B0E0, 32-byte slots from 0x14C620, at 3× scale."
-national-8x16-cyrillic-kana.png: "Three 94-glyph 8×16 sets from 0x1FA5E0, 0x1FADE0 and 0x1FB5E0: Cyrillic in ЙЦУКЕН keyboard positions, hiragana and katakana, at 3× scale."

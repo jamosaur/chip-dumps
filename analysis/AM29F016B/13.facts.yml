@@ -1,0 +1,98 @@
+dump: AM29F016B/13
+kind: byte-lane
+bus:
+  width_bits: 32
+  stride: 4
+  lane: 0
+  lane_evidence: "Bytes are the top bytes of PowerPC instructions (38/3C addi/addis, 7C opcode 31, 80-83 lwz, 90-93 stw, 48/4B b, 4E blr); consecutive bytes are consecutive instructions (94 7C 93 = stwu/mflr/stw, 7C 4E = mtlr/blr). Big-endian ARM code in block 2 also shows its condition/top byte (E0-EB). So this chip is D0-D7, the most significant byte."
+bit_order: normal
+endianness: big
+architecture: "PowerPC (32-bit, big-endian) main CPU; also big-endian ARM code embedded in the image"
+identification:
+  device: null
+  maker: null
+  confidence: low
+layout: "Chip sector N = 256 KB CPU block N, each starting with an 'M' header. Block 0: boot block with reset stub at CPU 0x100, boot code at CPU 0x2100-0x63CC, 63-record table at CPU 0x20000. Block 1: standalone sparse FF-heavy data (~211 KB CPU, possibly FPGA bitstream). Blocks 2-9: one chained image (~1.8 MB CPU) with big-endian ARM firmware first (block 2), then PowerPC code and string tables, block 8 almost all zero, ends at chip 0x094778. Chip 0x0A0000-0x1EFFFF erased. Block 31 (chip 0x1F0000): different header 'M\\0RN', 4-byte records, settings, last byte 4D."
+structures:
+  - offset: "0x000000"
+    type: "Block header (lane 0 of CPU 0x00-0xFF), block 0"
+    detail: "bytes 4,5 = chain flags (FF FF = standalone); byte 6 per-block varying (checksum MSB?); byte 8 = 80; byte 10 = FF"
+    raw: "4D 00 00 00 FF FF 12 00 80 00 FF FF"
+  - offset: "0x010000"
+    type: "Block header, block 1"
+    detail: "standalone; byte 10 = 71 (type code?); byte at 0x3F = 1B"
+    raw: "4D 00 00 00 FF FF A5 00 80 00 71 FF"
+  - offset: "0x020000"
+    type: "Block header, block 2 (first of chain 2-9)"
+    detail: "flags FF 80 = no predecessor, has successor; blocks 3-8 have 80 80 (byte6 4A BA BB 9A A7 2E); block 9 has 80 FF, byte6 1A"
+    raw: "4D 00 00 00 FF 80 2F 00 80 00 00 FF"
+  - offset: "0x00003F"
+    type: "Word at CPU 0xFC and PowerPC reset vector at CPU 0x100 (MSBs)"
+    detail: "lis / addi / mtctr-or-mtlr / bctr-or-blr stub; per-block byte at 0x3F: 20 1B 83 E8 78 77 97 8A 03 98 for blocks 0-9"
+    raw: "20 3C 38 7C 4E"
+  - offset: "0x000800"
+    type: "Unknown table at CPU 0x2000 before boot code"
+    raw: "52 42 00 FC F9 4D 49 65 73"
+  - offset: "0x008000"
+    type: "Table of 63 records, 16 lane bytes (64 CPU bytes) each, at CPU 0x20000"
+    detail: "byte 0 index 01..17; bytes 1-8 lane-split name; bytes 9-15 lane-split value; first record name 'Pem' value 'PRA'; others 'D8XSX36', '02:93', 'M86', 'I rds'/'32'"
+    raw: "01 50 65 6D 00 00 00 00 00 50 52 41 00 00 00 00"
+  - offset: "0x020040"
+    type: "Start of chained image payload (CPU 0x080100)"
+    detail: "48 4D at CPU 0x100/0x104, then RN 00 96 'xvhMIDCocbg' at CPU 0x080200, then ARM big-endian code from chip 0x0200C0"
+    raw: "48 4D 00 00 ... 52 4E 00 96 78 76 68 4D 49 44 43 6F 63 62 67"
+  - offset: "0x0200C0"
+    type: "Big-endian ARM code (MSB lane)"
+    detail: "chip 0x0200C0-0x02A2C1 and 0x02B943-0x02FFB0, plus small pieces at 0x033CCA and 0x034FD5; E5/E3/E1/E2/EB/E9/EA dominant"
+  - offset: "0x1F0000"
+    type: "Block 31 header (different format)"
+    detail: "T S C T U at every other byte from 0x1F0012; followed by 4-byte records B2 xx 00 00 (xx = D,T,K,I,P,F,H) whose B2 shifts one lane position every 0x4000 chip bytes (0x1F0000/0x1F4000/0x1F8000/0x1FC000), records end ~0x1FD01C"
+    raw: "4D 00 52 4E 07 00 B2 0F 00 00 00 00 05 00 00 00 00 00 54 00 53 00 43 00 54 00 55 00"
+  - offset: "0x1FF220"
+    type: "Small settings area"
+    detail: "repeated 00 90 and 00 08 00 40 patterns, bytes 0x1FF760: 00 0B 18 00 00 0B 00 00 00 0C 6B 00 94 FF DE 00"
+  - offset: "0x1FFFFF"
+    type: "Last byte of bank (CPU 0x7FFFFC MSB)"
+    raw: "4D"
+strings_of_note:
+  - offset: "0x020080"
+    text: "RN\\0\\x96xvhMIDCocbg"
+  - offset: "0x008030"
+    text: "Clem / D8XSX36"
+  - offset: "0x008080"
+    text: "MAe / 02:93"
+  - offset: "0x039A51"
+    text: "D:ri  pnD:ri  pnD:rihoMlD:rihepnd."
+  - offset: "0x039B85"
+    text: "1S1 hzo2S2 hzo3S3 hzo4S4 hzo"
+  - offset: "0x03DEAB"
+    text: "PXISideonmox PXtsPXNSSideonmoo'x"
+  - offset: "0x03E163"
+    text: "PXTTCWi Phb edPXTTCWi Phb ed"
+  - offset: "0x090040"
+    text: "oen n... PXMTLE ErF raspe PXMALE ErF oieh"
+  - offset: "0x0900F7"
+    text: " PX_CTD ErraaIfom stiiA"
+  - offset: "0x1F0012"
+    text: "T.S.C.T.U (every other lane byte)"
+wanted:
+  - id: ppc-lane-1
+    what: "Lane 1 (D8-D15) of the same 32-bit PowerPC flash bank"
+    look_for: "Sector starts with lane-1 bytes of the 'M' block header (same 64 KB sector boundaries used in sectors 0-9 and 31, sectors 10-30 erased); code regions whose bytes are the second byte of PowerPC instructions (register fields, e.g. 21 after stwu, 08 after mflr, 80 after blr's 4E); erased exactly where this chip is erased (from 0x094778 to 0x1EFFFF)"
+    why: "Needed to read instructions, strings and header fields"
+  - id: ppc-lane-2
+    what: "Lane 2 (D16-D23) of the same bank"
+    look_for: "Same sector usage pattern (data in sectors 0-9 and 31, end of image near chip 0x094778); PowerPC third bytes (e.g. 02 in mflr 7C0802A6, 00 in blr 4E800020)"
+    why: "Completes the 32-bit words with lanes 1 and 3"
+  - id: ppc-lane-3
+    what: "Lane 3 (D24-D31, least significant byte) of the same bank"
+    look_for: "Same sector usage; PowerPC low bytes such as A6 (mflr/mtlr 7C0803A6), 20 (blr 4E800020), branch displacement low bytes; lane-split printf text with 4-char periodicity"
+    why: "Last lane; with all four the help text, D: debug messages, block headers and the ARM firmware become readable"
+  - id: block-header-full
+    what: "Full 256-byte 'M' block headers at CPU 0x00-0xFF of each 256 KB block"
+    look_for: "Bytes following 4D at each 64 KB sector start in the partner lanes; chain flags 80/FF; a checksum whose MSB here is 12, A5, 2F, 4A, BA, BB, 9A, A7, 2E, 1A for blocks 0-9"
+    why: "Would identify the flash container format and the image name/version"
+  - id: arm-firmware
+    what: "Complete big-endian ARM firmware at CPU 0x080300-0x0BFEC0 (chip 0x0200C0-0x02FFB0)"
+    look_for: "Partner lanes carrying the low 24 bits of ARM instructions (register/immediate fields) in the same chip range"
+    why: "Would identify the coprocessor or peripheral chip and so the device"

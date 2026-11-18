@@ -1,0 +1,110 @@
+dump: MBM29F016A/5
+kind: byte-lane
+bus:
+  width_bits: 32
+  stride: 4
+  lane: 1
+  lane_evidence: >-
+    Unit 0x000000 holds a stride-4 sample of a 68k load module (POC-IDL) that is also stored contiguously in
+    the file system. Matched runs put file code offset c at CPU flash offset 4*chip_offset+1 = c+0x1010, so
+    this chip carries addresses = 1 mod 4 (D23-D16 on a big-endian bus). Separately, units never rewritten
+    (erase count 0) have logical unit number 4*sector+1, so the FTL formatted the bank with chip index 1 here.
+    Within FTL units the data is contiguous per chip: the flash-disk driver accesses each chip byte-wide.
+bit_order: normal
+endianness: big
+architecture: "68k (68020-class / CPU32; likely MC68360 QUICC)"
+identification:
+  device: "SII (Seiko Instruments) Multi Access Server NS-2482 ISDN/frame-relay router, NS-OS 3.1"
+  maker: "Seiko Instruments Inc. (SII)"
+  confidence: high
+layout: >-
+  32 x 64 KB FTL erase units, each with a 64-byte header at offset 0 (magic 24 11) and 127 x 512-byte data blocks
+  from 0x200. Unit 0 = LU 0x01: lane 1 of the POC-IDL loader image from 0x000400. 21 units of NS-OS flash-disk file
+  data, 9 zero-filled units (LU 0x05, 0x0D, 0x61-0x7D), 1 erased spare unit at 0x0E0000.
+structures:
+  - offset: "0x000000"
+    type: "FTL erase-unit header (64 bytes, big-endian words), same in every used unit"
+    detail: >-
+      bytes 0x00-0x13 = 24 11 00 80 00 00 00 80 00 01 00 80 00 01 02 00 00 40 00 20, then zeros;
+      word 0x24 = logical unit number; word 0x26 = probably erase count; words 0x2C and 0x2E equal (1-4, unknown).
+      Unit at 0x000000: LU 0x0001, EC 0, 0x2C/0x2E = 1.
+    raw: "24 11 00 80 00 00 00 80 00 01 00 80 00 01 02 00 00 40 00 20"
+  - offset: "0x0E0000"
+    type: "FTL spare/transfer unit"
+    detail: "24 11 then FF, except word 0x26 = 0007 and 0x28 = 0000; LU field (0x24) = FFFF"
+    raw: "24 11 FF FF ... FF FF 00 07 00 00"
+  - offset: "0x000024"
+    type: "logical-unit map of this chip (physical sector -> LU, EC, word 0x2C)"
+    detail: >-
+      00:01/0/1 01:05/0/1 02:4E/3/3 03:0D/0/1 04:41/5/4 05:19/2/2 06:1A/1/2 07:1E/1/2 08:21/0/1 09:26/1/2
+      0A:2A/1/2 0B:2F/1/2 0C:33/1/2 0D:36/1/2 0E:spare/7 0F:49/4/4 10:48/8/3 11:45/2/4 12:47/1/4 13:50/3/3
+      14:54/4/4 15:56/3/4 16:0E/8/3 17:5E/3/4 18-1F:61,65,69,6D,71,75,79,7D/0/1
+  - offset: "0x000400"
+    type: "lane 1 of a 32-bit 68k load image (POC-IDL loader), stride 4"
+    detail: >-
+      CPU flash offset = 4*chip_offset + 1; code section start (file code 613C 6128 6000 035A) at CPU 0x1010;
+      lane bytes 0x000400-0x000403 = 42 F6 00 00 (a 16-byte pre-header at CPU 0x1000); content to about 0x003874
+      (CPU ~0xE1D0). Similar to but not identical with the POC-IDL Ver 3.0 file in the FS.
+    raw: "42 F6 00 00 3C 00 7A 00 02 00 02 75 80 02 98 3C"
+  - offset: "0x000E46"
+    type: "lane-split hex digit strings"
+    detail: "'- 26AE159d0X' = every 4th char of 0123456789ABCDEF / 0123456789abcdef"
+  - offset: "0x160200"
+    type: "root directory (FS block 0x6F2 = first block of LU 0x0E)"
+    detail: >-
+      32-byte entries: u32 BE inode + 28-byte name. '.'=0 '..'=0 admin=1 bin=2 boot.3rd=440 bootconf=4 driver=5
+      etc=6 init=7 init.root=466 mnt=9 mnt2=10 mnt3=11 nsx.sys=467 pocvup=469 save=14
+  - offset: "0x028400"
+    type: "FS indirect blocks"
+    detail: "FS block 0x26F3 holds 0x000026F4; block 0x26F4 (0x028600) lists blocks 0x26F5..0x2720. FS block = LU*127 + (unit_offset-0x200)/512"
+    raw: "00 00 26 F4"
+  - offset: "0x02E000"
+    type: "NS-OS 68k load module header"
+    detail: "magic AB CD 02 00 05 32 00 00 06 55 06 55 06 55; u16 section count at 0x0E; u32 header size at 0x28; code size at 0x2C; 28-byte section entries at 0x50 named code/const/string/data/ram"
+    raw: "AB CD 02 00 05 32 00 00 06 55 06 55 06 55 00 04"
+strings_of_note:
+  - offset: "0x0FD9FE"
+    text: 'SysDescr     "SII Multi Access Server NS-2482."'
+  - offset: "0x10F600"
+    text: "NS-OS version 3.1 start."
+  - offset: "0x162C71"
+    text: "3rd Boot version 1.2 start."
+  - offset: "0x0F0BE8"
+    text: "POC-IDL Ver 3.0 "
+  - offset: "0x0F0B20"
+    text: "Pocvup version 1.0 start."
+  - offset: "0x0F0B59"
+    text: "POC-vup Flash Rom Write Error."
+  - offset: "0x04021A"
+    text: "L2CTL:(%x)Layer1 Not Ready"
+  - offset: "0x079ED2"
+    text: "PH:ISDN Cable Off"
+  - offset: "0x050F82"
+    text: "FR:%d,OVER MAX FLAME SIZE(%u)"
+  - offset: "0x0A9DAF"
+    text: "VOID	FUNCTION buildINS1500[sccno:INTEGER;hp:INTEGER;sp:INTEGER;"
+  - offset: "0x167000"
+    text: "#	init.boot (start up script)"
+  - offset: "0x0A6C00"
+    text: "#	write setup from Ramdisk to Memory Card"
+wanted:
+  - id: lane0-chip
+    what: "Chip index 0 (lane 0, D31-D24) of the same 4 x MBM29F016A Flash ROM bank"
+    look_for: "FTL headers 24 11 00 80 00 00 00 80 00 01 00 80 00 01 02 00 00 40 00 20 at each 64 KB; never-rewritten units with LU = 4*sector+0 (0x00, 0x04 ...); sector 0 holding lane 0 of the POC-IDL loader from offset 0x400"
+    why: "completes the loader image and supplies LU 0x00 (likely superblock/inode table) and other missing logical units"
+  - id: lane2-chip
+    what: "Chip index 2 (lane 2, D15-D8) of the bank"
+    look_for: "same FTL header; LU 0x02 in sector 0 with lane 2 of the loader; never-rewritten units with LU = 4*sector+2"
+    why: "third lane of the loader and missing flash-disk units"
+  - id: lane3-chip
+    what: "Chip index 3 (lane 3, D7-D0) of the bank"
+    look_for: "same FTL header; LU 0x03 in sector 0 with lane 3 of the loader; never-rewritten units with LU = 4*sector+3"
+    why: "fourth lane of the loader and missing flash-disk units"
+  - id: fs-inode-table
+    what: "NS-OS flash-disk superblock and inode table (FS blocks below 0x6F2, logical units 0x00-0x0D not present here except 0x01/0x05/0x0D)"
+    look_for: "structures mapping inode numbers (root=0, admin=1, bin=2, boot.3rd=440, nsx.sys=467, pocvup=469) to block lists in LU*127 numbering"
+    why: "needed to extract named files from the reassembled volume"
+  - id: ns2482-boot-rom
+    what: "Separate boot ROM holding the 1st/2nd boot stages and the 68k reset vectors"
+    look_for: "68k vector table, strings like '2nd Boot', 'bootconf', NS-2482 or SII"
+    why: "the flash bank starts with FTL headers at CPU address 0, so the CPU must reset from another device"

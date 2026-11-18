@@ -1,1 +1,0 @@
-layout-sector-map.png: "Block map of the whole 2 MB image in 4 KB cells (0x000000–0x1FFFFF), classified by density of SH epilogue low bytes (`26 0B`, `0B 09`, `0B F6`), FFh fill and zero fill; red cells hold the AAAAh header and footer markers."

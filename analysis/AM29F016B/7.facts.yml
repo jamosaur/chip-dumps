@@ -1,0 +1,74 @@
+dump: AM29F016B/7
+kind: byte-lane
+bus:
+  width_bits: 32
+  stride: 4
+  lane: 2
+  lane_evidence: "Lane carries 68k opcode high bytes (4E/48/2F/4C; '4C 4E' 641x but '4C 4E 4E' only 4x, so not 16-bit), which leaves lane 0 or 2. Vector-table bytes (reset PC 0A, default handler 95, user vectors 81 81 8C 95 8C 18 4C 95 27) look like address bits 15-8, not top bytes. 1-bpp 32-px font slices at 0x05A000 show right-hand glyph edges (pixels 16-23). Probable, not certain."
+bit_order: normal
+endianness: big
+architecture: "68k family with 32-bit data bus (68020/030/EC020 or ColdFire)"
+identification:
+  device: "\"GOLD TOUCH Multi-Game\" gambling/amusement machine (bingo and slot/keno-style games)"
+  maker: null
+  confidence: medium
+layout: "Vector table and header lane 0x000000-0x0003FF; 68k code lane to 0x02FE7F; strings/data to 0x037FFF; sparse tables to 0x03FFFF; in-system written records 0x040000-0x041C2D then erased; lookup tables and 1-bpp font slices 0x050000-0x05F8A7; 8bpp graphics (512-px screens and 60/92/96-px sprite sheets) 0x05F8A8-0x153FFF; erased 0x154000-0x1BFFFF; 8-bit unsigned PCM audio 0x1C0000-0x1F6FFF, unidentified table 0x1F7000-0x1F8FFF, PCM tail to 0x1F9396; erased to end."
+structures:
+  - offset: "0x000000"
+    type: "68k exception vector table (lane, 1 byte per vector)"
+    detail: "vector 0 (SSP) byte 00, vector 1 (PC) byte 0A, vectors 2-63 all 95; user vectors 64.. at 0x000040 = 81 81 8C 95 8C 18 4C 95 27 95...; 0x000080/90/A0/B0 = 4D/4E/4E/4F"
+    raw: "00 0A 95 95 95 95"
+  - offset: "0x000118"
+    type: "Header text fields (lane-split, 64-byte CPU slots)"
+    detail: "fragments 'S -G C' @0x118, 'RN.' @0x128, 'ce8 3' @0x138, 'X' @0x148, 'P' @0x158, 'C ' @0x168, 'RDy' @0x178"
+    raw: "53 20 2D 47 20 43"
+  - offset: "0x000180"
+    type: "initialised data after header"
+    raw: "00 00 FC 7C 00 7B F9 00 FF 90 FC 04 03 F8 0E F8"
+  - offset: "0x040000"
+    type: "Run-time records written in flash (meters/log), ~94 CPU bytes per record"
+    detail: "data ends at 0x041C2D then FFh; 16-bit-like field values 02 12, 02 94, 02 A4, 02 B6, 02 91, 02 D8, 02 5B ...; rising field F3 F3 F4 F4 F5 F5 F6 F6 F6 F7 F7 F8 F8"
+    raw: "01 00 00 00 00 00 08 00 00 00 00 00 00 00 02 12 00 00 4F"
+  - offset: "0x050000"
+    type: "byte lookup table T[x]=x/2 seen at x=4k+2"
+    raw: "01 03 05 07 09 0B 0D 0F"
+  - offset: "0x05F8A8"
+    type: "8bpp 512-px-wide title screen 'GOLD TOUCH Multi-Game' (lane: every 4th pixel)"
+    detail: "row = 128 chip bytes; about 250 rows; image starts mid-row relative to 0x05F880"
+  - offset: "0x0E5FF9"
+    type: "8bpp 512-px bingo screen (BINGO! logo, four B-I-N-G-O cards)"
+  - offset: "0x0FC000"
+    type: "8bpp sprite sheet, 92 px wide (23 chip bytes per row): arrows and small symbols"
+  - offset: "0x14B866"
+    type: "8bpp 512-px pirate island / sailing ship scene"
+  - offset: "0x1C0000"
+    type: "8-bit unsigned PCM audio (lane)"
+    detail: "histogram centred on 80; silence runs of 80 e.g. 0x1D0F54 (225 bytes), 0x1D2574 (246 bytes); ends 0x1F9396"
+strings_of_note:
+  - offset: "0x000118"
+    text: "S -G C"
+  - offset: "0x000138"
+    text: "ce8 3"
+  - offset: "0x000178"
+    text: "RDy"
+  - offset: "0x0368C3"
+    text: "CRCR"
+  - offset: "0x030184"
+    text: "TKST RAN"
+wanted:
+  - id: gold-touch-lane-0
+    what: "Lane 0 (bits 31-24) of the same 32-bit ROM set: opcode high bytes of the first word of each long"
+    look_for: "AM29F016B-size image with 68k opcode high bytes (4E/48/2F), vector table bytes mostly 00 at 0x000000, 8bpp 512-px screens at 128-byte rows in 0x05F8xx-0x153FFF, a run-time record sector at 0x040000 with an erased tail near 0x041C2E, PCM audio at 0x1C0000-0x1F93xx"
+    why: "together with this chip gives full opcode words and readable 'GOLD TOUCH' text/strings"
+  - id: gold-touch-lane-1
+    what: "Lane 1 (bits 23-16): low bytes of the first opcode word in each long"
+    look_for: "same region map; code area dominated by opcode low bytes (75, 56, B9, E7, DF, 6E) rather than 4E/48; the same screens render at 128-byte rows"
+    why: "completes the code and the text strings"
+  - id: gold-touch-lane-3
+    what: "Lane 3 (bits 7-0): low bytes of the second opcode word in each long"
+    look_for: "same region map as above; vector table bytes giving handler address low bytes; erased gap 0x154000-0x1BFFFF"
+    why: "completes the 32-bit words, the vector addresses and the header text at chip 0x000118"
+  - id: gold-touch-palette
+    what: "Colour palette for the 8bpp screens"
+    look_for: "256-entry RGB table in the data area of the merged image"
+    why: "renders the screens in colour"

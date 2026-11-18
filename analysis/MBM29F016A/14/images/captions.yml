@@ -1,0 +1,1 @@
+unit-block-map.png: "All 32 64 KB units of the chip as rows of 128 512-byte blocks, labelled with the logical unit number (L, header offset +0x24) and generation (g, +0x26) from each unit header; colours show header, binary, text, zero-filled and stride-4 lane blocks."

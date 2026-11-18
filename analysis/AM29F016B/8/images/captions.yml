@@ -1,0 +1,1 @@
+sector-map.png: "Block map of the whole 2 MB image after bit reversal (one row per 64 KB sector, 512-byte blocks): data tables up to 0x01F800, a small erased gap, then the 68k code lane from 0x01FBC0 to the end."

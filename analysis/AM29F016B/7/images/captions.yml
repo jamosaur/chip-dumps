@@ -1,0 +1,5 @@
+sector-map.png: 'Content map of the whole 2 MB image in 4 KB cells, coloured by what each region holds; light grey cells are erased (FFh).'
+gold-touch-title-lane2.png: '"GOLD TOUCH Multi-Game" title screen, 8bpp image 512 pixels wide starting near 0x05F8A8; only every fourth pixel is on this chip, so each byte is drawn 4 pixels wide, and palette indices are shown as grey levels.'
+bingo-cards-screen-lane2.png: 'Bingo game screen with a "BINGO" logo and four B-I-N-G-O cards, 8bpp 512-wide image near 0x0E5FF9, drawn from this chip''s one-in-four pixel lane with palette indices as grey.'
+pirate-ship-scene-lane2.png: 'Island and sailing-ship background, 8bpp 512-wide image near 0x14B866, drawn from this chip''s one-in-four pixel lane with palette indices as grey.'
+symbol-sprites-92px-lane2.png: 'Arrow graphics and small game symbols (birds, a duck, a house, a cat-like face and others) stored as 92-pixel-wide 8bpp sprites from 0x0FC000, drawn from this chip''s pixel lane at 4x width and 2x overall.'

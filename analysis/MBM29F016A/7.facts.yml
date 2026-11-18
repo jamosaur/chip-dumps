@@ -1,0 +1,73 @@
+dump: MBM29F016A/7
+kind: byte-lane
+bus:
+  width_bits: 16
+  stride: 2
+  lane: 1
+  lane_evidence: "Holds the low (odd-address, D7-D0) byte of big-endian SH instructions (0B 09 = rts/nop, E6 D6 C6 ... = mov.l rN,@-r15) and characters 1,3,5,7 of word-aligned '$Header:' strings ('Hae:'); pointers decode as bytes 1 and 3 of BE 32-bit words."
+bit_order: normal
+endianness: big
+architecture: "Hitachi SuperH SH-1/SH-2 (256-entry VBR vector table; SH7034/SH704x-style memory map)"
+identification:
+  device: null
+  maker: null
+  confidence: low
+layout: "0x74-byte image header, 256-entry vector table at image offset 0x74, record table, interrupt stubs, code to chip 0x1A2000, constant data/rcsid strings to 0x1F2000, late code + math constants to 0x1F3F48, erased to end. CPU address = 0x00800000 + 2*offset + 1."
+structures:
+  - offset: "0x000000"
+    type: "image header, lane bytes (b1,b3) of BE 32-bit words"
+    detail: "words 0x00-0x0C AA AA; word 0x10 = 34 78 (likely magic 0x12345678); 0x14 00 00; 0x18 00 00; 0x1C 10 FF; 0x20 00 30; 0x24 FF A0; 0x28 FF D0; 0x2C 00 00; 0x30-0x3C markers AA AA BB BB CC CC DD DD; 0x40 B4 50; 0x44 AB 0F; 0x48 00 A0; 0x4C 7D 6D; 0x50 00 F0; 0x54 3B E6; 0x58 00 EA; 0x5C 99 15; 0x60 00 78; 0x64-0x70 markers again"
+    raw: "aa aa aa aa aa aa aa aa 34 78 00 00 00 00 10 ff 00 30 ff a0 ff d0 00 00 aa aa bb bb cc cc dd dd b4 50 ab 0f 00 a0 7d 6d 00 f0 3b e6 00 ea 99 15 00 78 aa aa bb bb cc cc dd dd"
+  - offset: "0x00003A"
+    type: "SH-1/SH-2 exception vector table, 256 entries at image offset 0x74 (lane-split)"
+    detail: "vectors 0-3 zero; vector n (4..255) -> stub 0x008015C8+4(n-4) (lane shows 80 C8, 80 CC, ...); vector 11 (NMI) -> 0x008015B0; vectors 60-63 -> 0x0000xxA4, 0x0000xx00, 0x0000xxA4, 0x0000xx4C (area 0 boot code); table ends at chip 0x000239"
+    raw: "00 00 00 00 00 00 00 00 80 c8 80 cc 80 d0 80 d4 80 d8 80 dc 80 e0 80 b0 80 e8"
+  - offset: "0x00029C"
+    type: "dispatch/record table, 67 x 16-byte records (8 lane bytes each)"
+    detail: "lane bytes [id][type][ptr b1][ptr b3][len][00][00][00]; ids 0x01-0x43; handlers 0x0080xxxx-0x0095xxxx, one 0x00B1xx78, ids 0x04 and 0x3C point to 0x0003xxxx"
+    raw: "01 00 80 5a 01 00 00 00 02 01 8b b8 0b 00 00 00 03 01 8b a4 0f 00 00 00"
+  - offset: "0x000AE4"
+    type: "interrupt entry stubs, 252 x 4 bytes (bra common; mov #n) for n=4..255"
+    detail: "lane pairs (bra disp low, n): F6 04, F4 05, F2 06 ... 00 FF; common handler at chip 0x000CDC = CPU 0x008019B8"
+    raw: "f6 04 f4 05 f2 06 f0 07 ee 08"
+  - offset: "0x01003C"
+    type: "RCS $Header$ keyword string (odd characters only)"
+    detail: "69 such strings; two-digit RCS years 9x with units 6/7 (1996-1997); revisions 1.1-1.14 and 2.0"
+    raw: "48 61 65 3a 63 2e 2c 20 2e 20 36 30 2f 38 30 3a 34 31"
+  - offset: "0x1F3E00"
+    type: "double-precision constant table (lane-split), math library"
+    detail: "patterns AA AA AA, CC CC, 88 88 8A typical of polynomial coefficients"
+strings_of_note:
+  - offset: "0x01003C"
+    text: "Hae:c., . 60/80:41 riuiccr "
+  - offset: "0x012BC0"
+    text: "Hae:aaib., . 70/11:05 iysEp$"
+  - offset: "0x0130AE"
+    text: "Hae:rfrnecv209/30 24:2aizm e_it$"
+  - offset: "0x02039E"
+    text: "Hae:da_a., . 61/52:33 riuiEp$"
+  - offset: "0x0205A0"
+    text: "Hae:da_h2cv119/10 20:7aizm x "
+  - offset: "0x02DD84"
+    text: "Hae:c_r_cescv11 60/51:41 riuicfitk$"
+  - offset: "0x1A1CEE"
+    text: "Hae:ano_a_yrmcv13 70/82:22 lyn x "
+  - offset: "0x1B56F0"
+    text: "Hae:po82., . 70/31:50 cgmEp$"
+  - offset: "0x1DB732"
+    text: "Hae:iiapmcv119/21 83:2ueaEp$"
+  - offset: "0x1E8060"
+    text: "Hae:cgfn., . 70/92:94 aaaEp$"
+  - offset: "0x1F3F24"
+    text: "Hae$"
+  - offset: "0x1F3F2A"
+    text: "Hae:anmpda., . 70/21:83 lyn x "
+wanted:
+  - id: sh-high-byte-lane
+    what: "Partner chip with the even-address (high, D15-D8) bytes of the same 16-bit SH program"
+    look_for: "2 MB x8 image, same layout, content ending near 0x1F3F49 then FFh; offset 0x000008-0x000009 = 12 56 (magic 0x12345678); 0x000000-0x000007 = AA ...; 0x000042-0x00005F = 00 15 pairs (vector stubs 0x008015xx, NMI 0x008015B0), 0x00005E = 00 16; '$edr' ($Header even chars) at 0x01003C, 0x012BC0, 0x02039E, 0x1F3F24; high opcode bytes 00/4F/2F/6x around 0B 09 sites"
+    why: "completes every instruction, the header fields, full RCS paths/authors and any UI text; needed to identify the product and exact CPU"
+  - id: sh-area0-boot
+    what: "Area-0 boot ROM / on-chip ROM code at 0x00000000-0x0003FFFF that resets the CPU and provides TRAPA #60-63 services"
+    look_for: "SH-2 BE image with reset vectors at 0x0, handlers ending A4 and 4C in low 64 KB, routines at 0x0003xxxx, code that checks the AAAA/BBBB/CCCC/DDDD + 0x12345678 header at 0x00800000 and sets VBR to 0x00800074"
+    why: "explains how this image is validated and started, and which entries the record table calls"

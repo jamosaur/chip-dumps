@@ -1,0 +1,89 @@
+dump: MBM29F016A/6
+kind: byte-lane
+bus:
+  width_bits: 32
+  stride: 4
+  lane: null
+  lane_evidence: "68k opcode bytes seen are instruction-word low bytes (B9 from 4EB9, 75 from 4E75, 56 E7 from LINK/MOVEM), so lane 1 or 3 (0 = MSB); this image alone cannot tell which"
+bit_order: normal
+endianness: big
+architecture: "68k (68020/030/040/EC0x0 or 68360 class; MOVEM predecrement rules out ColdFire), plus 65C02-family code carried as data in module X0"
+identification:
+  device: "Embedded system with 8 MB flash array (4 x MBM29F016A on a 32-bit 68k bus) and a 6502-family sub-controller"
+  maker: null
+  confidence: low
+layout: "Module directory at 0x000000, status records at 0x000400/0x000440; modules A1 at 0x010000 (to 0x04725F), A1 at 0x050000 (to 0x05AEDF), A1 at 0x060000 (to 0x0740BF), X0 at 0x080000 (to 0x09E4BF); 0x0A0000-0x1FFFFF erased"
+structures:
+  - offset: "0x000000"
+    type: "Module directory (lane view), 14 entries x 8 lane bytes"
+    detail: "byte0-1 name (A1 A1 A1 S1 X0 I1 S1 C1 N1 E1 L1 D1 S1 L1), byte2-3 = 20 00, byte4 = 50 always, byte5 = 65 85 10 10 50 50 50 50 60 60 60 60 60 70, byte6 = 0D 02 05 00 07 00... (non-zero only for the three A1 entries and X0), byte7 = 00"
+    raw: "41 31 20 00 50 65 0D 00 41 31 20 00 50 85 02 00 41 31 20 00 50 10 05 00 53 31 20 00 50 10 00 00 58 30 20 00 50 50 07 00"
+  - offset: "0x000400"
+    type: "Status record"
+    raw: "FE 03 00 07 09"
+  - offset: "0x000440"
+    type: "Status record (cleared)"
+    raw: "FE 00 00 00 00 00"
+  - offset: "0x010000"
+    type: "Module header A1 #1"
+    detail: "byte4 0D matches directory entry 0 byte6; bytes4-5 0x0DDE roughly size/64 lane bytes"
+    raw: "41 02 69 50 0D DE 41 00 59 00 00 E7 16 00 00 80"
+  - offset: "0x050000"
+    type: "Module header A1 #2"
+    raw: "41 02 69 00 02 85 41 00 59 00 00 06 08 00 00 00"
+  - offset: "0x060000"
+    type: "Module header A1 #3"
+    raw: "41 02 69 00 05 A7 41 00 59 00 00 70 00 00 00 00"
+  - offset: "0x080000"
+    type: "Module header X0"
+    raw: "58 02 59 00 07 56 58 07 59 00 00 B7 70 00 00 90"
+  - offset: "0x040015"
+    type: "Fixed-size record table (lane-split)"
+    detail: "marker bytes 8B/8C and E0 every 0x83 lane bytes (524 CPU bytes per record); 8B changes to 8C at 0x040E69; bodies zero then FF from 0x041F30"
+  - offset: "0x09B283"
+    type: "Byte bit-reversal table (lane-split, every 4th entry)"
+    raw: "00 20 10 30 08 28 18 38 04 24 14 34 0C 2C 1C 3C"
+  - offset: "0x096000"
+    type: "65C02-family code region inside X0 (to about 0x09E3E0)"
+    detail: "high A9/8D/4C/20/AD/85/EA/9C frequencies; 9C (STZ) implies CMOS 65C02"
+  - offset: "0x093000"
+    type: "68k code seen through high bytes (odd-offset binary inside X0, to about 0x095800)"
+    detail: "frequent 4E 48 2F 20 70, pair 4E 48 present; rest of chip shows low bytes"
+strings_of_note:
+  - offset: "0x000000"
+    text: "A1 "
+  - offset: "0x0430E5"
+    text: "A1A1A1A1A1A1A1A1A1X0X0X1I1I1I1S1S1S1C1C1C1N1N1N1E1E1E1L1L1L1S1"
+  - offset: "0x043757"
+    text: "+1 +5 +9 +D"
+  - offset: "0x0437B3"
+    text: "+3 +7 +B +F158C"
+  - offset: "0x043796"
+    text: "+0 040000"
+  - offset: "0x0437D9"
+    text: "00 4000 C0159D"
+  - offset: "0x05013D"
+    text: "+3 +7 +B +F"
+  - offset: "0x04303E"
+    text: "NRRON?"
+  - offset: "0x04597C"
+    text: "PSRi xtMa!PSRi xtMa!PSRi xtMa"
+  - offset: "0x06DF94"
+    text: "  onr. N m o.  onr. N m o."
+wanted:
+  - id: other-low-lane
+    what: "The other low-byte lane (lane 1 or 3) of the same 32-bit array"
+    look_for: "MBM29F016A-size image with the same footprint: content only in 0x000000-0x0A0000, modules starting at 0x010000, 0x050000, 0x060000, 0x080000, erased gaps ending near 0x047260/0x05AEE0/0x0740C0/0x09E4C0; 68k low-byte statistics (B9, 75, 56 E7); stride-4 text fragments"
+    why: "completes the low bytes of every 68k instruction word and pins this chip's lane number"
+  - id: high-lanes
+    what: "The two high-byte lanes (lanes 0 and 2) of the same array"
+    look_for: "Same module boundaries and erased layout; 68k high opcode bytes 4E, 48, 2F, 20, 61 with pair 4E 48 (LINK then MOVEM) common; directory at 0x000000 possibly with the same A1/X0 names if headers are per-chip"
+    why: "with all four lanes the firmware, strings, directory and module headers can be rebuilt and the product identified"
+  - id: boot-rom
+    what: "The 68k boot device: reset vector table (initial SSP and PC) and loader that reads the module directory"
+    look_for: "68k vector table at offset 0, code that parses 2-letter module names A1/X0/S1/I1/C1/N1/E1/L1/D1 or tests header byte values 0x41/0x58"
+    why: "this chip has a directory at offset 0, not vectors, so the CPU boots from another device"
+  - id: x0-65c02-target
+    what: "The 6502-family peripheral controller and its firmware once interleaved"
+    look_for: "65C02 code (STZ 9C, BRA 80) using I/O around $D00C/$D014 and page-2 RAM ($025x)"
+    why: "names the sub-controller and helps identify the product"

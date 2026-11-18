@@ -1,0 +1,5 @@
+block-map.png: Content map of the whole 2 MB image, one cell per 4 KB, coloured by the kind of data in the readable first 2 KB of each cell.
+font-8x8-latin1.png: 8×8 1-bpp font at 0x054048, space onwards, 160 glyphs with accented Latin capitals and lower case, ¿, ß, ¢, £, © and ®; stored whole in this one byte lane.
+graphics-overview-060000.png: 8-bpp graphics at 0x060000–0x0DFFFF drawn 128 lane bytes per row with an arbitrary palette; grey hatched bands are the 2 KB halves lost to the stuck A11 line.
+screens-080000-0b8000.png: Two screen bitmaps at 0x080000 and 0x0B8000, 128 lane bytes per row, stretched 4× across and 2× down to about the right aspect (arbitrary palette, hatched bands missing).
+pcm-waveform-1f0000.png: The first 2048 bytes at 0x1F0000 plotted as unsigned 8-bit PCM, centred on 0x80.

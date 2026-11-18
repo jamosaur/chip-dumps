@@ -1,2 +1,0 @@
-layout-entropy-bit-bias.png: Per-2 KB entropy and fraction of 1-bits across the whole chip, showing the 4.3 KB structured head and the two payload regions that change character near 0x1A6400.
-bit-correlation-d0-d2-swap.png: Correlation between bit positions in the payload at 0x001140–0x1A6000, as read and after swapping data bits D0 and D2.

@@ -1,0 +1,2 @@
+logical-unit-map.png: The 128 logical units of unit B's flash disk, coloured by which dumped chip (3 or 13) holds each one and whether it carries data; grey units are on the missing chips 2 and 3.
+update-file-coverage.png: Block-by-block location of the 110 files written by the 1999-03-25 update (inodes 480-589), showing which blocks come from chip 3, from chip 13, or from the missing chips.

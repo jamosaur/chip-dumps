@@ -1,0 +1,82 @@
+dump: AM29F016B/10
+kind: byte-lane
+bus:
+  width_bits: 32
+  stride: 4
+  lane: 0
+  lane_evidence: "Every byte is the most significant byte (D31-D24) of a big-endian 32-bit word: MIPS opcode bytes (27/af/8f/03/3c/0c/24) form clean prologue/epilogue sequences; word-aligned magics show only their first byte (BA of BAD00B1E at 0x000000, 7F of the ELF magic at 0x000010, FE of FEEDFACE at 0x0012F3, 'P' of PK0304 at 0x0012F8); a 16-bit inflate mask_bits table (BE) yields 00 00 00 00 00 03 0F 3F FF at 0x001268."
+bit_order: normal
+endianness: big
+architecture: "MIPS, big-endian, 32-bit code; ELF e_flags top byte 0x20 (MIPS III, e.g. R4700/R5000)"
+identification:
+  device: "Cisco 3600-series router (3620/3640 likely), system flash SIMM holding a 'mz' IOS image, probably 12.0(x)T IP Plus (C36x0-I?-M)"
+  maker: Cisco Systems
+  confidence: high
+layout: "Cisco Class B flash file at 0x000000: 64-byte file header, ELF self-decompressing stub (MIPS code, strings, inflate tables, IOS banner), FEEDFACE header, then a one-entry PKZIP archive (deflate) running to 0x175AB6; erased (FF) from 0x175AB7 to the end of the chip."
+structures:
+  - offset: "0x000000"
+    type: "Cisco Class B flash file header (lane 0 of 64 bytes)"
+    detail: "word0 magic MSB BA (BAD00B1E), word1 length MSB 00, word2 checksum MSB A4, word3 date MSB 49 (Unix time 2008-10 to 2009-05 if epoch), name chars 0,4,8,12,16 = c,0,-,1,- and char 20 = NUL (name 17-20 chars)"
+    raw: "BA 00 A4 49 63 30 2D 31 2D 00 00 00 00 00 00 00"
+  - offset: "0x000010"
+    type: "ELF32 header of the IOS image (image byte 0x40)"
+    detail: "7F (magic), EI_CLASS 01, e_entry MSB 80 (KSEG0) at 0x000016, e_flags MSB 20 (EF_MIPS_ARCH_3) at 0x000019; p_vaddr/p_paddr MSB 80 at 0x00001F/0x000020; further 80 bytes at 0x000028, 0x000032, 0x00003C, 0x000045, 0x000050 and 10 bytes at 0x000044, 0x00004F"
+    raw: "7F 01 00 00 00 00 80 00 00 20"
+  - offset: "0x000057"
+    type: "MIPS stub code (opcode lane), to 0x000D52"
+    detail: "starts 3C 67 AF AF..; COP0 + CACHE instructions at 0x000095-0x000111 (cache init/flush); about 50 small call wrappers at 0x0003A3-0x0005BA"
+  - offset: "0x001057"
+    type: "stub message strings (lane 0)"
+    detail: "'Self decompressing the image : ' at lane 0x0010ED, 'Expected a checksum of' at 0x0010DC, 'checksum is incorrect' at 0x001114, register-dump labels ending a0..a3 at 0x001196-0x0011AF"
+  - offset: "0x001252"
+    type: "inflate cpdist table (ush, BE), lane view"
+    detail: "00 00 01 02 04 08 10 20 40 = high bytes of 1,5,..,257,513,...,16385"
+    raw: "00 00 01 02 04 08 10 20 40"
+  - offset: "0x001268"
+    type: "inflate mask_bits table (ush, BE), lane view"
+    raw: "00 00 00 00 00 03 0F 3F FF"
+  - offset: "0x001271"
+    type: "IOS version banner (lane 0)"
+    detail: "'Cisco Internetwork Operating System Software' / 'IOS (tm) 3?00 Software (C36?0-??-M), Version 1?.0(?)T, RELEASE SOFTWARE (fc?)' / 'Copyright (c) 1986-199? by cisco Systems, Inc.' / 'Compiled Wed 24-Feb-99 ..' (reconstructed from every 4th character)"
+  - offset: "0x0012F3"
+    type: "Cisco FEEDFACE compressed-image header (image byte 0x4BCC)"
+    detail: "magic MSB FE, uncompressed size MSB 00, compressed size MSB 00, two checksum MSBs 9A and 9D"
+    raw: "FE 00 00 9A 9D"
+  - offset: "0x0012F8"
+    type: "ZIP local file header (image byte 0x4BE0)"
+    detail: "'P'; version needed 0x14; method 08 (deflate); date low byte 58 (24 Feb); CRC byte2 09; csize byte2 5D; usize byte2 F4; extra len low 00; name chars 2,6,10 = 6, I, I; deflate data from image byte 0x4C0A"
+    raw: "50 14 08 58 09 5D F4 00 36 49 49"
+  - offset: "0x175AA3"
+    type: "ZIP central directory entry (starts at image byte 0x5D6A89, zip offset 0x5D1EA9)"
+    detail: "bytes 3,7,11,..: 02, ver-needed hi 00, method hi 00, date hi 26 (1999-02-24 with local low byte), CRC byte3 A6, csize byte3 00, usize byte3 00, name chars 1,5,9 = 3, -, B; CD size 0x3A so name length 12, likely 'C36?0-I?.BIN'"
+    raw: "02 00 00 26 A6 00 00 00 00 00 00 33 2D 42"
+  - offset: "0x175AB1"
+    type: "ZIP end of central directory (starts at image byte 0x5D6AC3)"
+    detail: "bytes 1,5,9,13,17,21: 'K', 00, 00, cdsize byte1 00, cdoff byte1 1E (cdoff 0x5D1EA9), comment len hi 00; archive length 0x5D1EF9, file ends at image byte 0x5D6AD8"
+    raw: "4B 00 00 00 1E 00"
+strings_of_note:
+  - offset: "0x0010ED"
+    text: "Self decompressing the image :  (every 4th char)"
+  - offset: "0x001292"
+    text: "Cisco Internetwork Operating System Software (every 4th char)"
+  - offset: "0x00129D"
+    text: "IOS (tm) 3?00 Software (C36?0-??-M), Version 1?.0(?)T, RELEASE SOFTWARE (fc?) (every 4th char: O t 3 _ t e 3 - M _ s _ 0 T R A S W _ 1)"
+  - offset: "0x0012B1"
+    text: "Copyright (c) 1986-199? by cisco Systems, Inc. (every 4th char: C r t ) 8 9 b i _ t , c)"
+  - offset: "0x0012BD"
+    text: "Compiled Wed 24-Feb-99 ..:.. by c... (every 4th char: o l W 2 e 9 : b c)"
+  - offset: "0x000004"
+    text: "flash file name, chars 0/4/8/12/16 = c 0 - 1 -"
+wanted:
+  - id: cisco-3600-flash-lane1
+    what: "D23-D16 lane of the same 32-bit flash bank (second byte of each word)"
+    look_for: "D0 at 0x000000 (BAD00B1E), 'E' (45) at 0x000010, ED at 0x0012F3 (FEEDFACE), 'K' (4B) at 0x0012F8, deflate data, 05 at 0x175AB1 (PK0506 byte 2), 5D at 0x175AB5, FF from 0x175AB6"
+    why: "completes the file header, ELF header, banner text and the ZIP stream"
+  - id: cisco-3600-flash-lane2
+    what: "D15-D8 lane of the same bank (third byte of each word)"
+    look_for: "0B at 0x000000, 'L' (4C) at 0x000010, FA at 0x0012F3, 03 at 0x0012F8, 06 at 0x175AB1 (PK0506 byte 3), FF from 0x175AB6"
+    why: "needed to reassemble and inflate the IOS image"
+  - id: cisco-3600-flash-lane3
+    what: "D7-D0 lane of the same bank (fourth byte of each word)"
+    look_for: "1E at 0x000000, 'F' (46) at 0x000010, CE at 0x0012F3, 04 at 0x0012F8, 00 (EOCD comment length) at 0x175AB5, FF from 0x175AB6"
+    why: "needed to reassemble and inflate the IOS image; also gives the low bytes of the file length and checksums"

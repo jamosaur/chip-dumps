@@ -1,0 +1,2 @@
+layout-map.png: "Sector map of the 2 MB image, one row per 64 KB sector and one pixel per 64 bytes: erased (white), packed data (grey, by entropy), block headers (green), the two 14,493-entry sorted tables (blue) and the record/string trailers plus the 13-byte record at 0x000000 (red)."
+sorted-tables.png: "Lane byte values of the two 14,493-entry non-decreasing tables at 0x0F9FD7 (block 1, rising to 3Ch) and 0x1BB64A (block 2, rising to 5Eh), plotted against entry index; the stray D5h at 0x0FB2AF is omitted."

@@ -1,0 +1,85 @@
+dump: MBM29F016A/14
+kind: whole-image
+bit_order: normal
+endianness: big
+architecture: "68k (68020 or later; bsr.l 61FF, MC68020/030 exception table)"
+identification:
+  device: "SII (Seiko Instruments) NS-2482 Multi Access Server / Communication Server, System Software Ver 2.2 (1997.10.29); variant NS-2282MH also mentioned"
+  maker: "Seiko Instruments Inc. (SII)"
+  confidence: high
+layout: >-
+  32 x 64 KB flash-translation units, each with a 48-byte header (magic 2411) and
+  127 x 512-byte data blocks of a byte-contiguous Unix-like file system. Units are
+  one quarter of a 128-unit (8 MB) pool striped across 4 chips; this chip is index 3
+  (unmoved units have logical = 4*physical + 3). Unit 0 holds a stride-4 byte lane of
+  68k code at 0x000400-0x003875; units with logical 7, 11, 99-123 are zero-filled.
+structures:
+  - offset: "0x000000"
+    type: "FTL unit header (repeated at every 64 KB unit)"
+    detail: "+0x00 2411 magic; +0x02 0080; +0x06 0080; +0x0A 0080; +0x0E 0200 block size; +0x10 0040 unit KB; +0x12 0020 units/chip; +0x24 logical unit no.; +0x26 generation (0 = never moved); +0x2C/+0x2E equal pair (unknown, erase count?)"
+    raw: "24 11 00 80 00 00 00 80 00 01 00 80 00 01 02 00 00 40 00 20"
+  - offset: "0x000024"
+    type: "logical unit numbers by physical unit 0..31 (+0x24) and generation (+0x26)"
+    detail: "L: 3,7,11,19,20,23,8,67,36,77,43,48,52,56,60,71,68,72,82,81,88,32,91,28,99,103,107,111,115,119,123,17; g: 0,0,0,2,1,0,1,1,1,2,0,1,1,1,1,2,1,1,7,4,2,10,1,4,0,0,0,0,0,0,0,2"
+  - offset: "0x000400"
+    type: "stride-4 byte lane of a 32-bit-wide 68k image (lane split)"
+    detail: "ctype table at 0x000E62 with quartered runs (04 04 digits, 81 81 A-F, 01 x5 G-Z); probably lane 3 of a boot/monitor image spread across unit 0 of all four chips; 0x3476 bytes here => ~0xD1D8 bytes of CPU address space starting near 0x1000"
+    raw: "52 71 A4 00 28 5A 02 1F 78 0F 98 E8 7B 58 75 00"
+  - offset: "0x031000"
+    type: "file-system indirect block"
+    detail: "big-endian 32-bit block numbers 0x973, 0x975..0x984; consistent with FS block = L*127 + (block_in_unit - 1)"
+    raw: "00 00 09 73 00 00 09 75 00 00 09 76"
+  - offset: "0x039600"
+    type: "directory block, 32-byte entries (u32 inode + 28-byte name)"
+    detail: "ls(0x25) md mkpt mkrd mount msgstat ospfdrvsetup ... rfree(0x34); deleted entries have inode and first name byte zeroed"
+    raw: "00 00 00 25 6C 73 00 00"
+  - offset: "0x039800"
+    type: "a.out OMAGIC relocatable executable header"
+    detail: "midmag 00010107, text 0x22B8, data 0xA80, bss 8, syms 0x564, entry 0, trsize 0x5C8, drsize 0x240; others at 0x04BE00, 0x04E400"
+    raw: "00 01 01 07 00 00 22 B8 00 00 0A 80"
+  - offset: "0x1FB600"
+    type: "root directory entries"
+    detail: "sbin(0xF) setup(0x10) share(0x11) stand(0x12) tmp(0x13) usr(0x14) version(0x24D) vup(0x16) os_version(0x1D4), deleted ?nit.root ?sx.sys ?s_version ?ocvup ?ersion ?ew_image_loaded"
+  - offset: "0x15B802"
+    type: "/setup/common/ifindex.map text"
+    detail: "P1-1..P1-8,P1-WAN,P2-*,P3-* ifIndex 11..39; en0 7000, en1 7001, hsd1 7501, fr1 8001, lo0 13000"
+strings_of_note:
+  - offset: "0x1FC400"
+    text: "#   Communication Server NS-2482 System Software 1997.10.29 (Ver 2.2)"
+  - offset: "0x15F030"
+    text: "SysDescr     \"SII Multi Access Server NS-2482.\""
+  - offset: "0x15F060"
+    text: "sysObjectID  263.2.1"
+  - offset: "0x085116"
+    text: "#/***** NS-2282MH *****/"
+  - offset: "0x08DAF6"
+    text: ">>> Version 1.0 ('95/09/05)"
+  - offset: "0x089D27"
+    text: "Memory Card is boot device."
+  - offset: "0x1F9F74"
+    text: "Defined for MC68020 and MC68030, no used by MC68040"
+  - offset: "0x1FA5A3"
+    text: "CCITT Recommendation G.703"
+  - offset: "0x1FA477"
+    text: "NXBR-R"
+  - offset: "0x0ACD76"
+    text: "Run out of memory(malloc error), fscheck aborted."
+  - offset: "0x05C1BB"
+    text: "alias[\"version\" ; \"show -a /version\"]"
+  - offset: "0x05D8D9"
+    text: "        tnstat prot : GRE protocol information"
+  - offset: "0x0ADA3B"
+    text: "%s:1.file-index No. [%d]/ 2.dir name [%s]/ "
+wanted:
+  - id: ns2482-flash-chips-0-2
+    what: "The other three MBM29F016A chips of the same 8 MB flash disk (logical units not on this chip, e.g. 0-2, 4-6, 9, 10, 12-16, 18, 21, 22, 24-27, 29-31 ...)"
+    look_for: "every 64 KB unit starting 24 11 00 80 00 00 00 80 00 01 00 80 00 01 02 00 00 40 00 20; unmoved units (+0x26 = 0) with logical (+0x24) = 4*physical + 0/1/2; NS-2482 / SII strings; no logical number duplicated with this chip's list"
+    why: "completes the file system: label/superblock, block map, file-index (inode) table and the rest of the files"
+  - id: ns2482-boot-lanes-0-2
+    what: "Byte lanes 0-2 of the 32-bit 68k image whose lane 3 is at 0x000400-0x003875 here"
+    look_for: "unit 0 of the partner chips (logical 0, 1, 2) with non-contiguous data from 0x000400 to about 0x003876; interleaving the four should give readable 68k code and a normal ctype table"
+    why: "recovers the boot/monitor code and fixes the lane order"
+  - id: ns2482-kernel
+    what: "The operating-system kernel image (probably the file whose deleted root entry ends in 'sx.sys') and the trap #4 shared-library loader"
+    look_for: "68020 code with an exception vector table, references to stdio/libmem/libctype shared libraries, same 2411 unit headers"
+    why: "identifies the OS and the executable and flash-driver formats"

@@ -1,0 +1,6 @@
+layout-map.png: Content map of the 2 MB image in 4 KB cells, one row per 128 KB, coloured by the region types identified in this write-up.
+halfwidth-8x16-font.png: 8×16 1-bpp half-width font at 0x1A5C70, 256 glyphs in character-code order (control-code pictures, ASCII with yen sign, block and line graphics, half-width katakana, card suits, and 円年月日時分秒 / 市区町村 symbols).
+kanji-16-row-left-halves.png: First 256 kanji of a 16-row JIS X 0208 font at 0x1ACC8E, starting at 亜; each byte is the left 8 pixels of a 16-pixel row, the right halves were on the partner chip.
+kanji-12-row-jis-level1-start.png: First 256 kanji of a second, 12-row JIS X 0208 font at 0x1D958E (16 bytes per glyph, rows 12–15 blank), starting at 亜; the glyphs look complete at 8 pixels wide.
+heading-arrow-32-frames.png: 32 frames of a direction arrow inside a circle, 4-bpp images from 0x15BD12 (stride 0x102), shown as the 16×30 pixels this lane holds out of each 32×30 image.
+character-sprites-4bpp.png: 56 frames of cartoon character animations (including sleeping "Zzz" frames) from 0x15DD52 onward, 4-bpp, shown as the 16×30 pixels this lane holds out of each 32×30 image.

@@ -1,0 +1,46 @@
+dump: MBM29F016A/10
+kind: byte-lane
+bus:
+  width_bits: 32
+  stride: 4
+  lane: null
+  lane_evidence: "This chip carries archive bytes at offsets equal to (central-directory-entry start + 1) mod 4; the absolute lane depends on the directory alignment, which is not visible on this lane."
+bit_order: "D0<->D2 swapped"
+endianness: unknown
+architecture: unknown
+identification:
+  device: null
+  maker: null
+  confidence: low
+layout: "Compressed data (probably deflate, lane-split) from 0x000000 to 0x075595, lane-split ZIP central directory entry 0x075596-0x0755A4, end-of-central-directory record 0x0755A5-0x0755A9, 00 padding at 0x0755AA, erased FF from 0x0755AB to the end of the chip"
+structures:
+  - offset: "0x075596"
+    type: "ZIP central directory file header (lane-split, stride 4, entry offsets 1,5,9,...,57)"
+    detail: "after D0/D2 swap: +1 'K'; +5 version-made-by high 00 (MS-DOS host); +9 flags high 00; +13 DOS time high A9 (hour 21, min 8-15); +17 CRC-32 byte1 69; +21 compressed size byte1 11; +25 uncompressed size byte1 AC; +29 name length high 00; +33 comment length high 00; +37 internal attrs high 00; +41 external attrs byte3 00; +45 local header offset byte3 00; name[3]='0', name[7]='S', name[11]='N'; name length 12, extra 0 (end record starts 58 bytes after entry start)"
+    raw: "4E 00 00 AC 6C 14 A9 00 00 00 00 00 30 56 4B"
+  - offset: "0x0755A5"
+    type: "ZIP end-of-central-directory record (lane-split, stride 4, record offsets 3,7,11,15,19)"
+    detail: "after swap: +3 06 (PK 05 06 signature), +7 00, +11 00 (total entries high), +15 00 (directory size byte3), +19 00 (directory offset byte3); one more 00 at 0x0755AA past the 22-byte record (zero padding to a word boundary)"
+    raw: "03 00 00 00 00 00"
+  - offset: "0x0582C7"
+    type: "periodic run in compressed stream"
+    detail: "9-byte period on this lane (36 bytes on the full bus), 0x0582C7-0x05836F, raw motif 70 06 38 84 19 C0 0B E0 07; likely repeated deflate match codes"
+    raw: "70 06 38 84 19 C0 0B E0 07"
+  - offset: "0x060D55"
+    type: "periodic run in compressed stream"
+    detail: "9-byte period, 0x060D55-0x060E5D, raw motif 27 7F F1 40 0C 9F FD D0 02"
+    raw: "27 7F F1 40 0C 9F FD D0 02"
+  - offset: "0x000000"
+    type: "start of chip, mid-stream compressed data (no header)"
+    detail: "first raw bytes; no lane of PK 03 04 fits here"
+    raw: "0B 02 EB 39 9D E3 6B 2E 51 9B 22 73 9D EA 94 3B"
+strings_of_note: []
+wanted:
+  - id: zip-cd-other-lanes
+    what: "The other three byte lanes of the same 32-bit bank, carrying the rest of the ZIP central directory entry and end record"
+    look_for: "Chips filled to about 0x0755AB (give or take one byte) then erased FF; lane-split records at or next to 0x075596-0x0755AA. One lane should have 'P' (50) at about 0x075596 and 05 at about 0x0755A5; another 01 at about 0x075596 then name chars 0/4/8 and 'P' of PK0506; another 02 then name chars 1/5/9 and 'K'. Probably also D0/D2 swapped"
+    why: "Gives the full 12-character 8.3 file name (pattern ???0???S.??N), CRC-32, compressed and uncompressed sizes, date and time, and the absolute lane order"
+  - id: zip-archive-start
+    what: "Start of the ZIP archive: local file header (PK 03 04, name length 0C) and the beginning of the deflate stream"
+    look_for: "A lower bank of four MBM29F016A-class chips, stride-4 lanes, high-entropy data filling the whole chip, with a lane-split local header near the start and name chars 0 / S / N at stride 4 on one lane"
+    why: "Needed to inflate the archive member; this chip holds only the last part of the compressed stream"

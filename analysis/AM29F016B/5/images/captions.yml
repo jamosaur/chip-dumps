@@ -1,0 +1,1 @@
+chip-layout-map.png: "Region map of the whole 2 MB chip, 128-byte cells and 16 KB per row: three lane-split TrueType fonts from 0x080000 to 0x191D5D, each ending in metrics, loca and name tables, with erased flash above and below."

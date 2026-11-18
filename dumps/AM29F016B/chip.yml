@@ -1,0 +1,18 @@
+# Shown on the chip page. `sector_size` (bytes) sets the columns of the sector map.
+# Source: AMD Am29F016B datasheet, publication 21444 Rev D (Nov 1999).
+part: AM29F016B
+maker: AMD (later Spansion)
+kind: 16 Mbit parallel NOR flash
+package: 48-pin TSOP, 40-pin TSOP or 44-pin SO
+marking_line: 2M×8 · 5V
+sector_size: 65536
+description: AMD 5 V flash, 2 MB per chip, organised as 32 uniform 64 KB sectors.
+specs:
+  Capacity: 16 Mbit (2 MB)
+  Organisation: 2M × 8
+  Sectors: 32 × 64 KB, in 8 protection groups of 4
+  Supply: 5.0 V ± 10%; ± 5% on the fastest grade
+  Access time: 70 / 90 / 120 / 150 ns
+  Packages: 48-pin TSOP, 40-pin TSOP (standard or reverse pinout), 44-pin SO
+  Process: 0.32 µm
+  Autoselect ID: Mfr 01h · Device ADh

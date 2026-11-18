@@ -1,0 +1,1 @@
+erase-unit-map.png: "Map of the 32 erase units, colour-coded by content, with each unit's logical number (header word 0x24) and probable erase count (header word 0x26)."

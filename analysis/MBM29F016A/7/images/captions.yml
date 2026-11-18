@@ -1,0 +1,1 @@
+region-map.png: Content map of the whole chip in 4 KB cells, classed by density of SuperH low-byte opcode patterns (code), tables and text (data) and erased FFh; the 0x74-byte header and vector table sit in the first cell.

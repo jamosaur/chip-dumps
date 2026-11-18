@@ -1,0 +1,1 @@
+block-map.png: "Whole-chip map in 1 KB blocks (64 KB per row): compressed lane data from 0x000000, the ZIP directory and log start at 0x10B800, lane-split log text to 0x114562, erased FFh after."

@@ -1,0 +1,1 @@
+ftl-unit-map.png: "Map of the 0x204-byte FTL units in the 16 erase units actually read (0x000000-0x07FFFF and 0x100000-0x17FFFF), coloured by status and by the file each logical sector belongs to; black marks the upper 32 KB of each erase unit, which could not be read because A15 was stuck."

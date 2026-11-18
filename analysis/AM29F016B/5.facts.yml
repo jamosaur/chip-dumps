@@ -1,0 +1,92 @@
+dump: AM29F016B/5
+kind: byte-lane
+bus:
+  width_bits: 64
+  stride: 8
+  lane: 7
+  lane_evidence: "Chip 0x080000 = file byte 7 of font 1's sfnt header (searchRange LSB 0x80); odd chip bytes are tag[3] (file byte 15+16k) and even bytes are offset LSBs (file byte 23+16k). Name records show (platform LSB, length LSB, next record's language LSB), which only a stride of 8 produces. Lane 7 = the last byte of each 8-byte group, i.e. the LSB of every second big-endian 32-bit word. A 32-bit bus with two interleaved 4-chip banks cannot be ruled out."
+bit_order: normal
+endianness: unknown
+architecture: unknown
+identification:
+  device: "Chinese (GB2312) TrueType font store, probably a printer font module or font board"
+  maker: "fonts by Monotype Typography; hardware maker unknown"
+  confidence: medium
+layout: "13-byte header lane at 0x000000; erased to 0x07FFFF; three lane-split TrueType fonts at 0x080000, 0x0C616C and 0x12F414 (bus 0x400000, 0x630B64, 0x97A0A4 if lane 7 and the bus starts at 0), ending at 0x191D5C; erased to the end"
+structures:
+  - offset: "0x000000"
+    type: "unknown header lane (bus 0x000000-0x000067)"
+    detail: "only non-FF bytes below 0x080000; probably a module or font index"
+    raw: "01 00 00 98 00 00 FD 00 00 00 FD FD FD"
+  - offset: "0x080000"
+    type: "font 1 sfnt table directory (lane 7: tag[3] and offset LSB per record)"
+    detail: "searchRange LSB 80; 14 tables; tag last letters 2 p ' ' m f d a x a p e t p T = OS/2 cmap cvt fpgm glyf head hhea hmtx loca maxp name post prep + T-ending tag (probably PCLT, stored last). Offset LSBs EC 3C 98 28 CC 68 A0 C4 44 C8 E8 FC 1C 2C"
+    raw: "80 32 EC 70 3C 20 98 6D 28 66 CC 64 68 61 A0 78 C4 61 44 70 C8 65 E8 74 FC 70 1C 54 2C"
+  - offset: "0x0C616C"
+    type: "font 2 sfnt table directory (lane at byte 3 mod 8: version LSB, rangeShift LSB, then checksum LSB/length LSB per record)"
+    detail: "rangeShift 0x60 (14 tables). Order OS/2 PCLT cmap cvt fpgm glyf head hhea hmtx loca maxp name post prep. cksum LSB C0 0A 09 29 70 63 15 99 18 4E CA 62 C8 58; len LSB 4E 36 5A 46 03 D4 36 24 80 84 20 11 20 7A"
+    raw: "00 60 C0 4E 0A 36 09 5A 29 46 70 03 63 D4 15 36 99 24 18 80 4E 84 CA 20 62 11 C8 20 58 7A"
+  - offset: "0x12F414"
+    type: "font 3 sfnt table directory (same phase as font 2)"
+    detail: "cksum LSB C8 EE 07 A9 70 AF B5 91 9E 32 91 93 C8 12; len LSB 4E 36 62 34 03 CC 36 24 F8 FC 20 F0 20 08. fpgm (cksum 70, len 03) matches font 2"
+    raw: "00 60 C8 4E EE 36 07 62 A9 34 70 03 AF CC B5 36 91 24 9E F8 32 FC 91 20 93 F0 C8 20 12 08"
+  - offset: "0x0C51C8"
+    type: "font 1 loca (long), LSBs of even entries"
+    detail: "0x0C51C8-0x0C60D8, starts 00 44 44 AE; implies 7712 glyphs; last LSB 9C = glyf length LSB"
+    raw: "00 44 44 AE 22 9A"
+  - offset: "0x12E486"
+    type: "font 2 loca (long), LSBs of odd entries"
+    detail: "0x12E486-0x12F395, starts 44 44 A4 88; implies 7712 glyphs"
+    raw: "44 44 A4 88 2C 42"
+  - offset: "0x190DB6"
+    type: "font 3 loca (long), LSBs of even entries"
+    detail: "0x190DB6-0x191CF5, starts 00 44 44 E8; last CC = glyf length LSB; 7806 glyphs"
+    raw: "00 44 44 E8 94 30"
+  - offset: "0x0C60D9"
+    type: "font 1 maxp lane"
+    detail: "maxPoints LSB E0, maxZones 2, maxIDEFs 0, maxComponentDepth 0"
+    raw: "E0 02 00 00"
+  - offset: "0x191CF6"
+    type: "font 3 maxp lane"
+    detail: "maxPoints LSB 4D, maxZones 2"
+    raw: "4D 02 00 00"
+  - offset: "0x0C60DD"
+    type: "font 1 name records (platform LSB, length LSB, next language LSB)"
+    detail: "Mac lengths 0x67 0x06 0x0D 0x0D; Windows (lang LSB 04, Chinese) lengths 0x8C 0x0C 0x0A 0x1A"
+    raw: "01 67 00 01 06 00 01 0D 00 01 0D 00 03 8C 04 03 0C 04 03 0A 04 03 1A 04"
+  - offset: "0x12F39A"
+    type: "font 2 name header and records (count LSB, then language, platform, length)"
+    detail: "count 0x10; Mac lengths 06 15 03 3A; Windows lengths 0A 2A 08 74"
+    raw: "10 00 01 06 00 01 15 00 01 03 00 01 3A 04 03 0A 04 03 2A 04 03 08 04 03 74"
+  - offset: "0x191CFA"
+    type: "font 3 name records"
+    detail: "Mac lengths 0x42 0x05 0x0D 0x0D; Windows lengths 0x8C 0x0A 0x08 0x1A"
+    raw: "01 42 00 01 05 00 01 0D 00 01 0D 00 03 8C 04 03 0A 04 03 08 04 03 1A 04"
+strings_of_note:
+  - offset: "0x0C60F5"
+    text: "o 4prdi it.geeup HdHd g rnyy"
+  - offset: "0x12F3B3"
+    text: "i nyyo jS l dMnaiB2BMaedfprd"
+  - offset: "0x191D14"
+    text: " nyy Pvi.LonhB.GMiitkop c9Mt opL c9Pevoi ."
+  - offset: "0x0C60F5"
+    text: "reconstructed: Copyright (c) 1994 Monotype Typography Ltd (font 1 Mac copyright, every 8th char)"
+  - offset: "0x191D14"
+    text: "reconstructed: (c) 199x Monotype Typography L... (font 3 Windows copyright, every 4th char)"
+wanted:
+  - id: lanes-0-6-of-fonts
+    what: "The other seven byte lanes of the same 64-bit font store (bus 0x400000-0xC8EAEF)"
+    look_for: "AM29F016B-sized images with TrueType glyph-flag statistics (bytes 01 06 07 15 23 33 35 dominant) from 0x080000 to about 0x191D5D and erased elsewhere; lane 3 (or the lane at byte 3 mod 8) should show font 2/3 directory tag letters; the lane at file byte 4 of font 1 should show 'OS/2'"
+    why: "re-interleaving all eight gives three complete TTF files and their exact names"
+  - id: font1-directory-tags
+    what: "Lanes holding the first three letters of font 1's table tags at chip 0x080000"
+    look_for: "at 0x080000, alternating bytes spelling O,S,/ / c,m,a / c,v,t ... and offset bytes"
+    why: "confirms the 14th tag (PCLT?) and the full offsets"
+  - id: name-strings
+    what: "The rest of the name-table strings at chip 0x0C60DD, 0x12F39A and 0x191CFA"
+    look_for: "Mac Roman text such as 'Copyright (c) 1994 Monotype Typography Ltd', 'MHei', 'MSung', 'Medium', 'Light' sampled every 8th byte"
+    why: "identifies the exact font families and versions"
+  - id: module-header
+    what: "The rest of the header at bus 0x000000-0x000067 (chip 0x000000-0x00000C)"
+    look_for: "a few non-FF bytes at offset 0 of an otherwise erased first 512 KB"
+    why: "probably lists the fonts' offsets and sizes or identifies the module"

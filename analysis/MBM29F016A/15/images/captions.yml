@@ -1,0 +1,1 @@
+sector-map.png: "All 32 erase units of the chip, labelled with the logical unit number and erase count from each 0x2411 unit header; each of the 127 data blocks is coloured using the filesystem's free-block bitmap at 0x060800."

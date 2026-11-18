@@ -1,0 +1,1 @@
+unit-block-map.png: "Map of all 32 64 KB units (rows) by 512-byte block, classified from the raw image, with each unit's logical number from the 0x2411 header at offset 0x24."

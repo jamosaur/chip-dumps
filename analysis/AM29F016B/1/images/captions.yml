@@ -1,0 +1,1 @@
+block-content-map.png: Content map of 0x000000-0x09FFFF, one row per 64 KB sector and one cell per 256 bytes, classified from this byte lane (the first cell of each row holds the 64-byte block header); the rest of the chip is erased.

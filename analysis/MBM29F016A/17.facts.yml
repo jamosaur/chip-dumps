@@ -1,0 +1,89 @@
+dump: MBM29F016A/17
+kind: whole-image
+bus:
+  width_bits: 32
+  stride: 4
+  lane: null
+  lane_evidence: "Only unit 0 (0x000400-0x003875, a boot image) is lane-split; histogram says odd lane (1 or 3). FS numbering marks this as chip index 1 of 4, which fits lane 1 but does not prove it."
+bit_order: normal
+endianness: big
+architecture: "68k (68020 or later; bsr.l 61FF)"
+identification:
+  device: "Japanese multi-port ISDN (INS64/INS1500) / frame-relay / HSD router, on-board 8 MB flash (4 x MBM29F016A)"
+  maker: null
+  confidence: low
+layout: "32 x 64 KB units, each with a 0x2411 header block; unit 0 holds one byte lane of the boot code, the rest is this chip's share (31 logical units + 1 spare) of a block-mapped flash file system with ABCD 68k executables, scripts and setup text; 9 units zero-filled"
+structures:
+  - offset: "0x000000"
+    type: "flash FS unit header (every 64 KB unit)"
+    detail: "magic 24 11; geometry 0080 0000 0080 0001 0080 0001 0200 0040 0020; u16 logical unit at 0x24; u16 at 0x26; u16 pair (erase count?) at 0x2C; 0x40-0x1FF FF in live units, 00 in factory-format units; data = blocks 1-127 (0xFE00 bytes) per unit"
+    raw: "24 11 00 80 00 00 00 80 00 01 00 80 00 01 02 00 00 40 00 20"
+  - offset: "0x000024"
+    type: "logical unit numbers on this chip (phys unit 0x00..0x1F)"
+    detail: "01 05 4D 0D 22 19 1A 1E 21 26 2A 2F 33 36 spare(0x0E) 3E 16 45 3B 53 54 5B 59 5C 61 65 69 6D 71 75 79 7D; untouched units = 4*unit+1 -> chip index 1 of 4, ~128 logical units total"
+  - offset: "0x0E0000"
+    type: "spare (erased) unit"
+    detail: "only 24 11 at 0x00 and 00 0B 00 00 at 0x26 programmed"
+  - offset: "0x000400"
+    type: "boot image, one odd byte lane of 4 (stride 4)"
+    detail: "lane projections of 3rd-boot strings: 'il oc  c.' at 0x000DCC, 'naearNfar.' at 0x000DDF, 'c%s=0PxX' at 0x000DB0; hex table '26AE159d0X' at 0x003860; ends 0x003875"
+    raw: "42 F6 00 00 3C 00 7A 00 02 00 02 75 80 02 98 3C"
+  - offset: "0x020C00"
+    type: "ABCD 68k executable header (66 instances, 512-byte aligned)"
+    detail: "AB CD 02 00 05 32 00 00 06 55 06 55 06 55 00 nsec; 0x28 header size (0xD0+0x10*nsec), 0x2C image size, 0x30 mem size; names code/const/string/data/ram at 0x50 (0x1C each); section descriptors at 0xD0 (id<<24, addr, size, filesize)"
+    raw: "AB CD 02 00 05 32 00 00 06 55 06 55 06 55 00 04"
+  - offset: "0x0F3600"
+    type: "3rd boot loader executable (image 0x27E0)"
+    detail: "loads /nsx.sys from Flash Rom or Memory Card; checks 2nd boot version"
+  - offset: "0x13FA00"
+    type: "fscopy executable spanning logical units 0x53 -> 0x54"
+    detail: "continues at 0x140200; proves logical-unit chaining skips block 0"
+  - offset: "0x080200"
+    type: "setup file index text"
+    detail: "name<TAB>description and name<TAB>/setup/... path lists, wan1..wan30"
+strings_of_note:
+  - offset: "0x0F5C71"
+    text: "3rd Boot version 1.2 start."
+  - offset: "0x0F5C8D"
+    text: "check 2nd Boot version number NG."
+  - offset: "0x0F5DAC"
+    text: "/nsx.sys"
+  - offset: "0x0F5DCC"
+    text: "load OS from %s (%s %08X-%08X) OK."
+  - offset: "0x0274C0"
+    text: "| <<< PPP Authentication Setup Menus >>> |"
+  - offset: "0x0278F6"
+    text: ">>> Version 1.0 ('95/09/05)"
+  - offset: "0x13E650"
+    text: "# reload & PRI 1997-10-09"
+  - offset: "0x0A9DAF"
+    text: "VOID\tFUNCTION buildINS1500[sccno:INTEGER;hp:INTEGER;sp:INTEGER;"
+  - offset: "0x025400"
+    text: "$PLUGIN[\"/share/initSubr.r\";FALSE]"
+  - offset: "0x043F1A"
+    text: "Memory Card is boot device."
+  - offset: "0x080205"
+    text: "gateways\tIP Static Gateway Information"
+  - offset: "0x022A10"
+    text: "/setup/default/setupfile.def"
+  - offset: "0x140DF6"
+    text: "fscopy: FS update time get Error."
+  - offset: "0x1016B2"
+    text: "netstat:ip-driver-open"
+wanted:
+  - id: boot-other-lanes
+    what: "The other three byte lanes of the boot image in unit 0 (chip offsets 0x000400 to about 0x003875)"
+    look_for: "MBM29F016A-size image with 0x2411 unit header at 0x0 and logical unit 0x00/0x02/0x03 at 0x24, unscrambled-looking data from 0x000400 that interleaves (stride 4) with this lane into 68k code and strings such as 'initialize memory card NG. no card.' and 'Vect #%d %s SR=0x%04X PC=0x%08X'"
+    why: "reconstructs the 2nd boot loader and fixes this chip's lane (1 or 3)"
+  - id: fs-other-chips
+    what: "Chips 0, 2 and 3 of the same flash file system: the remaining logical units of the ~8 MB volume"
+    look_for: "64 KB units starting '24 11 00 80 00 00 00 80 00 01 00 80 00 01 02 00 00 40 00 20', untouched units numbered 4*unit+0/2/3 at 0x24, ABCD 02 00 05 32 executables, /setup and $PLUGIN scripts"
+    why: "completes the file system, including files cut off here (e.g. L=0x4E continues the executable at 0x025C00)"
+  - id: fs-directory
+    what: "File-system root, directory and allocation structures (not present on this chip), probably in logical unit 0x00"
+    look_for: "entries holding names like servers, ospfrestart, initSubr.r, nsx.sys, setupfile.def in a 0x2411-unit image"
+    why: "gives file names and lets every file be extracted"
+  - id: nsx-os
+    what: "The OS image /nsx.sys loaded by the 3rd boot"
+    look_for: "a large ABCD 02 00 05 32 executable (hundreds of KB) with kernel, TCP/IP and driver strings"
+    why: "would identify the OS and probably the product name/version"

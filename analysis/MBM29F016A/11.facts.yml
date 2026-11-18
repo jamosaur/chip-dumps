@@ -1,0 +1,59 @@
+dump: MBM29F016A/11
+kind: byte-lane
+bus:
+  width_bits: 32
+  stride: 4
+  lane: 1
+  lane_evidence: "Decoded first byte D0 = byte 1 of flash header magic 0xBAD00B1E; decoded a.out magic byte 02 = byte 1 of 0x0002010x; code bytes are 68k opcode low bytes (56 E7, 5E 56, 75); CRC-16 table shows only every other 16-bit entry"
+bit_order: "chip D0..D7 -> CPU byte bits 5,6,7,4,3,2,1,0 (D0->b5, D1->b6, D2->b7, D3->b4, D4->b3, D5->b2, D6->b1, D7->b0)"
+endianness: big
+architecture: "68k (68020/030/040 class; MOVEM predecrement, 32-bit bus)"
+identification:
+  device: "Cisco 68k router (probably 2500/3000 family, IGS images), 8 MB flash bank of 4 x MBM29F016A"
+  maker: Cisco Systems
+  confidence: medium
+layout: "16-byte lane of a flash file header, 8-byte lane of an a.out header, 68k text to ~0x0F124B, data segment to 0x0F5C4D, erased above"
+structures:
+  - offset: "0x000000"
+    type: "Flash file header, 64 bytes CPU-side (lane 1 of each field)"
+    detail: "decoded d0 3d ee 00 67 2d 30 30 then FF; magic byte D0 (0xBAD00B1E), length bits 23-16 = 3D, checksum low byte EE, header byte 13 = 00, name chars [1],[5],[9],[13] = g - 0 0, rest FF"
+    raw: "0e b9 77 00 e3 b1 09 09 ff ff ff ff ff ff ff ff"
+  - offset: "0x000010"
+    type: "a.out exec header (SunOS 68020 style), lane 1"
+    detail: "decoded 02 3c 01 03 00 00 00 00: midmag 0x0002010x, text 0x3Cxxxx, data 0x01xxxx, bss 0x03xxxx, syms 0, entry 0x??00xxxx (likely 0x0300xxxx), trsize 0, drsize 0"
+    raw: "40 39 80 c0 00 00 00 00"
+  - offset: "0x000018"
+    type: "start of text segment"
+    detail: "decoded ff de 00 00 02 01 00 02 00 3a 01 03 00 02 00 00 00 02 3c d9 96 3c 00 74 74 07, then FF run 0x000036-0x00008E, code from ~0x000090"
+  - offset: "0x0F1294"
+    type: "IOS version banner (lane 1, phase 2 of string); second copy at 0x0F12F9"
+    detail: "consistent with 'IOS (tm) ??00 Software (IGS-D-L), Version 1?.?(?0), RELEASE SOFTWARE (fc1) / Copyright (c) 1986-199? / Compiled Mon ?1-Mar|Apr-9? ??:4?'; with file name, fits 10.3(10)"
+    raw: "21 fa 22 4a cb 92 4b eb 01 4b 73 9b b3 63 4b 92"
+  - offset: "0x0F2970"
+    type: "CRC-16 (reflected poly 0x8408) table, low bytes of odd entries 1..255"
+    detail: "128 bytes, matches exactly under the bit permutation"
+    raw: "94 dc b5 fd 86 ce a7 ef"
+  - offset: "0x0F2B43"
+    type: "CRC-16 (reflected poly 0x8408) table, low bytes of even entries 0..254"
+    detail: "128 bytes, matches exactly under the bit permutation"
+    raw: "00 48 21 69 12 5a 33 7b"
+strings_of_note:
+  - offset: "0x0F1294"
+    text: "sIrw rnymfrI( 0frID,rn.0RASW 1oi  69ysSe .meo1r 4ym (decoded lane of the IOS banner)"
+  - offset: "0x0089BA"
+    text: ": x80% x80% xa% x80% x80 (decoded lane of '%08x %08x %x ...')"
+  - offset: "0x000004"
+    text: "g-00 (decoded flash file name chars 1,5,9,13)"
+wanted:
+  - id: cisco-ios-lane0
+    what: "Lane 0 (bits 31-24) of the same 32-bit flash bank"
+    look_for: "first byte decodes to BA (magic 0xBAD00B1E), byte 4 to 00 (a.out magic byte 0); length byte 00; 68k opcode high bytes (4E, 48, 2F ...); data ends near offset 0x0F5C4D; possibly its own data-line scramble"
+    why: "completes the file header, name, banner text and opcodes"
+  - id: cisco-ios-lane2
+    what: "Lane 2 (bits 15-8) of the same 32-bit flash bank"
+    look_for: "first byte decodes to 0B, byte 4 to 01 (a.out magic 0x0002010x); 68k opcode high bytes; data ends near 0x0F5C4D"
+    why: "completes the banner (version digits) and file name characters 2,6,10,..."
+  - id: cisco-ios-lane3
+    what: "Lane 3 (bits 7-0) of the same 32-bit flash bank"
+    look_for: "first byte decodes to 1E, byte 4 to 07/08/0B (a.out magic low byte); 68k opcode low bytes like this chip (56 E7, 75); CRC-16/0x8408 low-byte half-tables near 0x0F29xx-0x0F2Bxx"
+    why: "completes the length/checksum and the other half of every instruction stream"

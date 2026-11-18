@@ -1,0 +1,2 @@
+bank-map.png: The 32 sectors of each chip in unit A by byte lane, with the logical unit and erase count from each sector's FTL header; lane 1 (chip 1) is missing.
+logical-disk.png: The rebuilt 8 MB flash disk as 127 logical units of 127 blocks, coloured by the chip that holds each unit and shaded by whether a live file uses the block.

@@ -1,0 +1,1 @@
+sector-map.png: Map of all 32 erase units (rows) by 128 512-byte sectors (columns), classified as FTL header, xflush parameters, lane-split boot image, ABCD executable header, 68k code, text, other data, zero or erased.

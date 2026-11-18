@@ -1,0 +1,1 @@
+unit-block-map.png: Map of all 32 erase units (64 KB) as rows of 128 512-byte blocks, labelled with the logical unit number (L) and erase count (e) from each unit header at +0x24; block contents classified as zero-fill, FF, text, binary/68k code, 0xABCD executable headers and the stride-4 byte lane at 0x000400.

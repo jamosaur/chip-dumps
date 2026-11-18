@@ -1,0 +1,82 @@
+dump: AM29F016B/11
+kind: byte-lane
+bus:
+  width_bits: null          # 16 or 32; not settled from this lane alone
+  stride: null              # 2 or 4
+  lane: null
+  lane_evidence: "Not determinable. Fields alternating with 00 in the headers (e.g. '44 00 29 00 b7 00') hint at 32-bit values split over a 16-bit bus, but a 32-bit bus with paired fields fits too."
+bit_order: normal
+endianness: unknown
+architecture: unknown
+identification:
+  device: null
+  maker: null
+  confidence: low
+layout: "13-byte record at 0x000000, erased to 0x080000; two blocks of one container format (block 1 0x080000-0x0FD8DB, block 2 0x0FD8DC-0x1BEF4D), each: 0x13B-byte header of step tables, packed data body, 0x37-byte pre-table, 14,493-entry sorted table, 29-byte record list, lane-split strings; erased from 0x1BEF4E to end"
+structures:
+  - offset: "0x000000"
+    type: "small record in otherwise erased first 512 KB (one lane)"
+    detail: "13 bytes"
+    raw: "cd 00 00 00 0c 00 00 00 00 00 00 00 c6"
+  - offset: "0x080000"
+    type: "block 1 header field area (50 bytes, lane-split)"
+    detail: "every second byte 00; followed by step tables at +0x032 (step 08, 12 entries 06..5e), +0x077 (step 20, 10..d0 x3), +0x090 (step 9D, 92 entries from 00, wraps), +0x0F4 (step 04, 05..9d) and +0x124 (step 04, a3..fb); body at +0x13B"
+    raw: "01 03 44 00 29 00 b7 00 1f 3c f5 00 e3 00 49 00 59 00 e4 00 1b 00 03 00 02 00 f4 00 00 12 01 00 00 6f cd ae 51 00 48 75 ff 48 00 01 03 00 00 00 02 00"
+  - offset: "0x080090"
+    type: "offset/step table, low lane"
+    detail: "92 entries: 00 then +9Dh mod 256 each; wraps ~56 times, so this lane is the low byte of wider values"
+    raw: "00 9d 3a d7 74 11 ae 4b e8 85 22 bf"
+  - offset: "0x0FD8DC"
+    type: "block 2 header (50-byte field area, lane-split)"
+    detail: "count 0C then 12 pairs (letter, non-decreasing value): letters S C m l e h m o a a o r, values 00 00 00 00 5e 5e 5e 5f 60 60 60 60; then fields; same step-table slots as block 1 (0a..5a step 8; 00..e0 step 20 x3; 00 + 40h x92; 03..9f and a1..fd step 4); body at 0x0FDA18"
+    raw: "0c 53 00 43 00 6d 00 6c 00 65 5e 68 5e 6d 5e 6f 5f 61 60 61 60 6f 60 72 60 01 06 00 00 0a 01 00 00 08 33 01 00 18 2d 20 ff 30"
+  - offset: "0x0F9FA0"
+    type: "pre-table marker + 48-byte table (block 1)"
+    detail: "values near multiples of 256/9"
+    raw: "01 01 00 46 00 00 00 39 d7 73 56 aa 1d 39 39 73"
+  - offset: "0x1BB613"
+    type: "pre-table marker + 48-byte table (block 2)"
+    detail: "values near multiples of 256/12"
+    raw: "01 01 00 82 00 00 00 aa 44 ec 96 ec 56"
+  - offset: "0x0F9FD7"
+    type: "non-decreasing table, high-order lane (block 1)"
+    detail: "0x389D (14,493) bytes; 7,554 x 00 (one stray d5 at 0x0FB2AF), then 01..3C; run lengths 210,167,160,150,... jump at 17h (248) and 3Bh (126)"
+  - offset: "0x1BB64A"
+    type: "non-decreasing table, high-order lane (block 2)"
+    detail: "0x389D (14,493) bytes; 7,489 x 00, then 01..5E; run lengths 167,125,110,106,... jump at 24h (189)"
+  - offset: "0x0FD874"
+    type: "record list (block 1)"
+    detail: "8-byte head then 7 triples; third byte cycles 3,5,7,1,3,5,7; first byte 00 x3 then 04 x4; middle byte likely string-offset lane"
+    raw: "01 15 00 00 00 00 00 01 00 4e 03 00 67 05 00 77 07 04 bc 01 04 5e 03 04 90 05 04 a4 07"
+  - offset: "0x1BEEE7"
+    type: "record list (block 2)"
+    raw: "01 17 00 00 00 00 00 01 00 4d 03 00 65 05 00 75 07 04 bb 01 04 57 03 04 89 05 04 9b 07"
+  - offset: "0x1BEF1B"
+    type: "block 2 tail after strings"
+    detail: "zeros, a7 at 0x1BEF2E, then 03 00 00 00 01 ending at 0x1BEF4D; FF after"
+strings_of_note:
+  - offset: "0x0FD891"
+    text: "1M p 9o nHmed-.-H re ea. 1 oepa .(1-Pevoi ."
+  - offset: "0x0FD8BD"
+    text: "dMt  i 2TidM age drfnpyryd"
+  - offset: "0x1BEF04"
+    text: "1M p -eo noShLELnremM p"
+  - offset: "0x0FD8DD"
+    text: "S C m l e h m o a a o r (alternate bytes of 12 pairs)"
+wanted:
+  - id: other-lanes-block-headers
+    what: "The other byte lane(s) of the same flash bank, with block headers at the same chip offsets 0x080000 and 0x0FD8DC"
+    look_for: "at 0x080090 the higher bytes of a 92-entry table whose low byte steps by 9Dh (should be slowly incrementing 00,00,01,01,02...), and step-table slots at +0x032/+0x077/+0x0F4; erased 0x00000D-0x07FFFF with a small record at 0x000000; data ending at 0x1BEF4E then FF"
+    why: "confirms bus width and lane order and gives full-width offsets"
+  - id: sorted-table-lower-bytes
+    what: "Lower-order lanes of the two 14,493-entry sorted tables at 0x0F9FD7 and 0x1BB64A"
+    look_for: "at those offsets, bytes that wrap 00..FF repeatedly (or cycle) while this lane stays constant; same 0x389D length"
+    why: "rebuilds the full values and shows what the table indexes"
+  - id: lane-split-strings
+    what: "The remaining characters of the strings at 0x0FD891 and 0x1BEF04"
+    look_for: "printable ASCII at 0x0FD891-0x0FD8D7 and 0x1BEF04-0x1BEF1A on partner chips"
+    why: "interleaved, they should give readable names for the two blocks and maybe the product"
+  - id: firmware
+    what: "The program code that reads these blocks (on another chip or ROM; none here)"
+    look_for: "a code ROM referencing a data bank with two blocks and 14,493-entry tables"
+    why: "identifies the device and the container format"

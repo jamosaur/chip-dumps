@@ -1,0 +1,79 @@
+dump: MBM29F016A/8
+kind: byte-lane
+bus:
+  width_bits: 32
+  stride: 4
+  lane: null
+  lane_evidence: "Stride 4 from 83-byte log lines: 110 'LF <61> CR <20> LF' segments with the dump-line colon always at index 22. Absolute lane not determinable alone; within the ZIP central directory entry this chip holds byte 1 of each 4-byte group counted from the PK 01 02 signature, but the CD header need not be bus-aligned."
+bit_order: "D0<->D2 swapped"
+endianness: unknown
+architecture: unknown
+identification:
+  device: null
+  maker: null
+  confidence: low
+layout: "0x000000-0x10B894 one lane of compressed ZIP member data; 0x10B895 lane of ZIP central directory entry + EOCD; 0x10B8B6 first 16-byte log record header; 0x10B8C6-0x114562 lane-split CR/LF text log (crash/debug dumps); 0x114563-end erased"
+structures:
+  - offset: "0x10B895"
+    type: "ZIP central directory header PK 01 02 (lane-split, stride 4, this lane = header bytes 1,5,9,...)"
+    detail: "K; made-by hi 00; flags hi 00; mtime hi 7A (15:16-15:23); crc byte1 66; csize byte1 75; usize byte1 2C; namelen hi 00; commentlen hi 00; intattr hi 00; extattr[3] 00; offset[3] 00; name length 12; name chars 3,7,11 = '4','E','N' (8.3 name ???4???E.??N, probably .BIN)"
+    raw: "4E 00 00 7A 63 75 29 00 00 00 00 00 31 45 4B"
+  - offset: "0x10B8A4"
+    type: "ZIP end-of-central-directory PK 05 06 (lane-split; this lane = EOCD bytes 3,7,11,15,19)"
+    detail: "sig byte3 06; cd-disk hi 00; total-entries hi 00; cd-size[3] 00; cd-offset[3] 00"
+    raw: "03 00 00 00 00"
+  - offset: "0x10B8A9"
+    type: "unexplained bytes after EOCD (comment or padding)"
+    detail: "swapped: 00 00 FE 43 4F 53 53 FA 00 41 2C 1D BB"
+    raw: "00 00 FB 46 4F 56 56 FA 00 44 29 1D BE"
+  - offset: "0x10B8B6"
+    type: "log record header (16 lane bytes: BA 00 xx 00 + 'cho'+4 digits + 5 bytes FF/00)"
+    detail: "swapped BA 00 7C 00 'cho0009' FF*5; text follows at 0x10B8C6"
+    raw: "BA 00 79 00 66 68 6F 30 30 30 3C FF FF FF FF FF"
+  - offset: "0x10F7A4"
+    type: "log record header, apparently interrupted"
+    detail: "swapped BA 00 AE 00 47 00 then FF*10"
+    raw: "BA 00 AB 00 47 00 FF FF FF FF FF FF FF FF FF FF"
+  - offset: "0x10F8A5"
+    type: "log record header"
+    detail: "swapped BA 00 D5 00 'cho0017' 00*5, followed by lane text 'Co4R0rs vox h1/4y mr'"
+    raw: "BA 00 D5 00 66 68 6F 30 30 34 37 00 00 00 00 00"
+  - offset: "0x1120CD"
+    type: "log record header"
+    detail: "swapped BA 00 09 00 'cho0009' FF*5, followed by lane text 'Co4R0rs vox h1/4y mr'"
+    raw: "BA 00 0C 00 66 68 6F 30 30 30 3C FF FF FF FF FF"
+  - offset: "0x10D999"
+    type: "lane-split memory dump lines (83 bytes incl. CRLF: 'AAAAAAAA: ' + 8 x 32-bit words, %8X right-aligned)"
+    detail: "110 such 4-line groups between 0x10D999 and 0x113D00; reconstructed address digits give 0x62xxxxxx addresses (e.g. 0x6231235x, 0x624C1D64, 0x6252E6E8), step 0x20 per line"
+strings_of_note:
+  - offset: "0x10B8BA"
+    text: "cho0009"
+  - offset: "0x10F8A9"
+    text: "cho0017"
+  - offset: "0x10F8B5"
+    text: "Co4R0rs vox h1/4y mr"
+  - offset: "0x1103D0"
+    text: "==h laCkers====="
+  - offset: "0x10D940"
+    text: "==MonrTe====="
+  - offset: "0x10B8C7"
+    text: "r 493S3VI a oaof) epe"
+  - offset: "0x10B8E0"
+    text: "7C0B0B67 78CF0966 04B11A6F F441Wicho sri_214tn, bticu r':4Tra 2M'"
+wanted:
+  - id: zip-cd-other-lanes
+    what: "The other three byte lanes of the ZIP central directory entry and EOCD at the same chip offsets (0x10B895-0x10B8A8)"
+    look_for: "Lane-split bytes at chip offset 0x10B895: the lane before this one starts with 'P' (50h) and should hold namelen lo 0Ch and name chars 2, 6, 10; the other two lanes start with the signature bytes 01h/02h (raw 04h/02h if the same D0/D2 swap) and hold name chars 0, 4, 8 ('.') and 1, 5, 9; the EOCD bytes 0-2 (50 4B 05) follow about 0x0F lane bytes later"
+    why: "Gives the full 12-character file name, compression method, CRC, sizes, and CD size/offset (hence archive start)"
+  - id: zip-start-lower-bank
+    what: "Start of the ZIP archive: local file header 'PK 03 04' with the same 12-char name ???4???E.??N and the first part of the compressed stream"
+    look_for: "Lane-split (stride 4) local header, mtime hi 7A, crc byte1 66, csize byte1 75, usize byte1 2C; probably on chips of a lower bank (this chip's offset 0 is mid-stream)"
+    why: "Needed to inflate the archived firmware file"
+  - id: compressed-other-lanes
+    what: "Three partner lanes covering 0x000000-0x10B894 of the same bank (high-entropy compressed data ending at the same offset)"
+    look_for: "MBM29F016A-size images, high entropy to about 0x10B890, then ZIP CD/EOCD lane bytes, log record headers BA 00 xx 00 at 0x10B8B6, lane-split CR/LF log to about 0x114563, FF after"
+    why: "Interleaving four lanes rebuilds the archive tail"
+  - id: log-other-lanes
+    what: "The other three lanes of the text log at 0x10B8C6-0x114562"
+    look_for: "Lane-split ASCII with 83-byte hex-dump lines, '=' banners, colon at index 22 of 61-char segments in a different phase"
+    why: "Reconstructs the readable crash/debug log, which should name the CPU registers, firmware version and possibly the product"

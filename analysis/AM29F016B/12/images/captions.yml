@@ -1,0 +1,1 @@
+lane-content-map.png: Content map of the whole chip after bit reversal, one cell per 1 KB, one row per 64 KB sector; tables at 0x000090-0x00A8FF, 68k code and strings to about 0x135400, data segment to 0x139AC2, erased above 0x139AC3.

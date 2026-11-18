@@ -1,0 +1,1 @@
+sector-content-map.png: "Content of the whole 2 MB chip in 1 KB cells, classified by lane signatures: PowerPC code, big-endian ARM APCS code, text, zero, erased, the sparse-zero data in block 1 and the log block at 0x1F0000."

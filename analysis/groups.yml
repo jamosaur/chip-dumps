@@ -1,0 +1,179 @@
+groups:
+  sii-ns-2482-unit-a:
+    title: SII NS-2482 flash disk, unit A
+    summary: Three of the four MBM29F016A chips of one NS-2482 unit's 8 MB flash disk, updated on 1999-07-12 06:20.
+    kind: lanes
+    bus_bits: 32
+    lane_bits: 8
+    banks: 1
+    expected_members: 4
+    identified_as: Seiko Instruments NS-2482 Multi Access Server
+    confidence: high
+    facts:
+      Bus: 32-bit, big-endian (boot image only; file-system units are per chip)
+      CPU: "68EC040 main CPU, MC68360 QUICC as peripheral"
+      Software: NS-2482 Ver 3.1 (1998-08-31), last update 1999-07-12 06:20
+      Flash disk: 128 x 64 KB units, header 24 11 00 80
+    members:
+      - dump: MBM29F016A/12
+        bank: 0
+        lane: 0
+        confidence: high
+        note: Confirmed by the rebuilt file system; every block pointer into 12 checks out, and unit B's chip 0 fails the same tests
+      - dump: MBM29F016A/19
+        bank: 0
+        lane: 2
+        confidence: high
+      - dump: MBM29F016A/15
+        bank: 0
+        lane: 3
+        confidence: high
+    wanted:
+      - id: lane-1
+        what: Chip 1 (lane 1, D23-D16) of this unit
+        look_for: "24 11 00 80 unit headers; sector-0 lane starting 42 F6 00 00 3C 00 7A 00; logical units exactly 01 05 0D 19 1A 1E 21 22 26 2A 2F 33 36 3B 3E 45 47 4D 51 53 54 57 5B 5C 61 65 69 6D 71 75 79 7D (no spare unit)"
+    created: 2026-11-18
+    updated: 2026-11-18
+
+  sii-ns-2482-unit-b:
+    title: SII NS-2482 flash disk, unit B
+    summary: Chips 0 and 1 of a second NS-2482 unit's 8 MB flash disk, with its own block allocation and a 1999-03-25 06:11 update.
+    kind: lanes
+    bus_bits: 32
+    lane_bits: 8
+    banks: 1
+    expected_members: 4
+    identified_as: Seiko Instruments NS-2482 Multi Access Server
+    confidence: high
+    facts:
+      Bus: 32-bit, big-endian (boot image only; file-system units are per chip)
+      CPU: "68EC040 main CPU, MC68360 QUICC as peripheral"
+      Software: NS-2482 Ver 3.1 (1998-08-31), last update 1999-03-25 06:11
+      Flash disk: 128 x 64 KB units, header 24 11 00 80
+    members:
+      - dump: MBM29F016A/3
+        bank: 0
+        lane: 0
+        confidence: high
+      - dump: MBM29F016A/13
+        bank: 0
+        lane: 1
+        confidence: high
+    wanted:
+      - id: lane-2
+        what: Chip 2 (lane 2, D15-D8) of this unit
+        look_for: "24 11 00 80 unit headers; sector-0 lane starting 46 7A 2A 40 61 03; untouched units 4*sector+2; no logical unit that 3 or 13 already holds"
+      - id: lane-3
+        what: Chip 3 (lane 3, D7-D0) of this unit
+        look_for: "24 11 00 80 unit headers; sector-0 lane starting 52 71 A4 00 28 5A; probably logical unit 0x08 with the superblock (magic 00011954) and inodes 0-479 with change times 1999-03-25 (0x36F9D3xx)"
+    created: 2026-11-18
+    updated: 2026-11-18
+
+  sii-ns-2482-unit-c:
+    title: SII NS-2482 flash disk, unit C
+    summary: Chip 3 of a third NS-2482 unit's 8 MB flash disk, updated on 1999-07-13 02:06.
+    kind: lanes
+    bus_bits: 32
+    lane_bits: 8
+    banks: 1
+    expected_members: 4
+    identified_as: Seiko Instruments NS-2482 Multi Access Server
+    confidence: high
+    facts:
+      Software: NS-2482 Ver 3.1 (1998-08-31), last update 1999-07-13 02:06
+      CPU: "68EC040 main CPU, MC68360 QUICC as peripheral"
+      Flash disk: 128 x 64 KB units, header 24 11 00 80
+    members:
+      - dump: MBM29F016A/14
+        bank: 0
+        lane: 3
+        confidence: high
+    wanted:
+      - id: other-chips
+        what: Chips 0-2 of this unit
+        look_for: "24 11 00 80 unit headers with no logical unit in common with 14; logical unit 0x09 with inodes 480-590 whose change times are 1999-07-13 02:06 (0x378A9F08). MBM29F016A/4 (chip 2) has no conflict with 14 but has not been tied to this unit."
+    created: 2026-11-18
+    updated: 2026-11-18
+
+  sii-ns-2482-unit-d:
+    title: SII NS-2482 flash disk, unit D
+    summary: Chip 1 of a fourth NS-2482 unit's 8 MB flash disk. Its logical units clash with every other NS-2482 chip in the collection.
+    kind: lanes
+    bus_bits: 32
+    lane_bits: 8
+    banks: 1
+    expected_members: 4
+    identified_as: Seiko Instruments NS-2482 Multi Access Server
+    confidence: high
+    facts:
+      Software: NS-2482 Ver 3.1 (1998-08-31)
+      CPU: "68EC040 main CPU, MC68360 QUICC as peripheral"
+      Flash disk: 128 x 64 KB units, header 24 11 00 80
+    members:
+      - dump: MBM29F016A/5
+        bank: 0
+        lane: 1
+        confidence: high
+    wanted:
+      - id: other-chips
+        what: Chips 0, 2 and 3 of this unit
+        look_for: "24 11 00 80 unit headers with no logical unit in common with 5 (which holds 01 05 0D 0E 19 1A 1E 21 26 2A 2F 33 36 41 45 47 48 49 4E 50 54 56 5E 61-7D step 4 and the spare)"
+    created: 2026-11-18
+    updated: 2026-11-18
+
+  sii-ns-2482-unit-e:
+    title: SII NS-2482 flash disk, unit E
+    summary: Chip 1 of a fifth NS-2482 unit's 8 MB flash disk, separate from units A, C and D by its logical units.
+    kind: lanes
+    bus_bits: 32
+    lane_bits: 8
+    banks: 1
+    expected_members: 4
+    identified_as: Seiko Instruments NS-2482 Multi Access Server
+    confidence: high
+    facts:
+      Software: NS-2482 Ver 3.1 (1998-08-31)
+      CPU: "68EC040 main CPU, MC68360 QUICC as peripheral"
+      Flash disk: 128 x 64 KB units, header 24 11 00 80
+    members:
+      - dump: MBM29F016A/17
+        bank: 0
+        lane: 1
+        confidence: high
+    wanted:
+      - id: other-chips
+        what: Chips 0, 2 and 3 of this unit
+        look_for: "24 11 00 80 unit headers with no logical unit in common with 17 and no second spare unit. MBM29F016A/4 (chip 2) has no conflict with 17 but has not been tied to this unit."
+    created: 2026-11-18
+    updated: 2026-11-18
+
+  sh-car-navigation-flash:
+    title: SH car navigation firmware pair
+    summary: Two MBM29F016A chips forming the 16-bit bus of a 4 MB SuperH firmware image for a Japanese car navigation unit with GPS and a CD-ROM map drive, c. 1996-97.
+    kind: lanes
+    bus_bits: 16
+    lane_bits: 8
+    banks: 1
+    expected_members: 2
+    identified_as: Japanese car navigation unit (SuperH, GPS, CD-ROM map drive)
+    confidence: low
+    facts:
+      Bus: 16-bit, big-endian
+      CPU: Hitachi SH-1/SH-2
+      Image magic: AAAA... 12345678 at 0x10
+      Sources: RCS 1996-1997 (cd.c, diag_gps.c, chg_routcom.c)
+    members:
+      - dump: MBM29F016A/18
+        bank: 0
+        lane: 0
+        confidence: high
+      - dump: MBM29F016A/7
+        bank: 0
+        lane: 1
+        confidence: high
+    wanted:
+      - id: area0-boot
+        what: Area-0 boot ROM that starts the image at 0x00800000
+        look_for: "SH vector table at 0 with TRAPA 60-63 handlers ending A4/4C in the low 64 KB; code checking AAAA/BBBB/CCCC/DDDD + 0x12345678 and setting VBR to 0x00800074"
+    created: 2026-11-18
+    updated: 2026-11-18

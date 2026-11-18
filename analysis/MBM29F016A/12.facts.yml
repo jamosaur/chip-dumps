@@ -1,0 +1,92 @@
+dump: MBM29F016A/12
+kind: whole-image
+bus:
+  width_bits: 32
+  stride: 1
+  lane: 0
+  lane_evidence: "FTL data is byte-contiguous (each chip driven as its own byte-wide device), but the units never rewritten carry logical unit number 4*physical_index+0, so this is chip 0 of four. The lane-split boot image in logical unit 0 (0x000400-0x003877) is the high byte of 16-bit words with stride 4 (bigram test), consistent with D31-D24."
+bit_order: normal
+endianness: big
+architecture: "68k (MC68360 QUICC / CPU32, uses BSR.L 61FF)"
+identification:
+  device: "multi-port ISDN (BRI + INS1500 PRI) / frame-relay access router with MC68360 QUICC"
+  maker: null
+  confidence: low
+layout: "32 x 64 KB FTL units (magic 2411, 128 x 512-byte sectors). Unit 0 = xflush parameter sector + lane-split boot image; 20 units of byte-contiguous file-system data; 1 erased spare unit at 0x130000; 8 unused units 0x180000-0x1FFFFF; units at 0x010000, 0x030000, 0x090000 zero."
+structures:
+  - offset: "0x000000"
+    type: "FTL unit header (repeated at every 0x10000)"
+    detail: "BE16 words: 2411 magic, 0080 sectors/unit, 0000, 0080, 0001, 0080, 0001, 0200 sector size, 0040 header size, 0020 units/chip; +0x24 logical unit number (0x00-0x7C, 128-unit space = 8 MB); +0x26 unknown (0-0x16); +0x2C/+0x2E erase count duplicated. Bytes 0x40-0x1FF are 00 in never-rewritten units, FF in rewritten ones."
+    raw: "24 11 00 80 00 00 00 80 00 01 00 80 00 01 02 00 00 40 00 20"
+  - offset: "0x000024"
+    type: "Logical unit numbers per physical unit (header +0x24), units 0..31"
+    detail: "00 04 3A 0C 44 15 41 1D 0F 25 29 2D 31 35 39 40 16 43 48 [spare: FFFF, +0x26=000D] 52 55 5A 5E 60 64 68 6C 70 74 78 7C; never-rewritten units = 4*index"
+  - offset: "0x000280"
+    type: "xflush driver parameter block (BE32)"
+    detail: "7F, 0, 1, 7F, 200, 3F8 (1016 sectors = 8 units x 127 = boot partition), 0, 3F01, 0, 1D45, 194D, 09EC, 1F41, 1FC0; 0x0003FC = C3 46 DF FF"
+    raw: "00 00 00 7f 00 00 00 00 00 00 00 01 00 00 00 7f 00 00 02 00 00 00 03 f8"
+  - offset: "0x000400"
+    type: "Boot image, one byte lane (stride 4, MSB of 16-bit words)"
+    detail: "sectors 2-28 of logical unit 0; code lane to ~0x003400, data/strings lane 0x0034E0-0x003877 (contains 00 05 05 05 marker at 0x0034E0 and 0x003650)"
+    raw: "32 03 00 00 61 60 4e 08 67 08 67 4e 42 00 f4 20"
+  - offset: "0x130000"
+    type: "Spare/transfer FTL unit, erased"
+    detail: "only 24 11 at +0 and 00 0D 00 00 at +0x26 programmed"
+  - offset: "0x026200"
+    type: "Executable header, magic ABCD0200 (41 instances on sector boundaries)"
+    detail: "+0x0E section count (2-4); +0x2A code offset (F0/100/110); 28-byte section entries named code/const/string/data/ram from +0x50; code ends with 4E44 4E75 then shared-library names (stdio, libmisc, libperr, libmem)"
+    raw: "ab cd 02 00 05 32 00 00 06 55 06 55 06 55 00 04"
+  - offset: "0x0E6800"
+    type: "Directory sector, 32-byte entries (BE32 inode + 28-byte name)"
+    detail: ". = 0x194, .. = 0x12, common = 0x195, default = 0x196; 0x0E6A00 common: init.conf.local = 0x197; 0x0E6C00 default: command.def = 0x24C, rs232c.def = 0x199"
+  - offset: "0x021A00"
+    type: "Linked 20-byte records tagged 0020201B (22520 instances)"
+    detail: "[0020201B][00000000|04000000][00000000][value][next offset or FFFFFFFF], next steps 0x14"
+strings_of_note:
+  - offset: "0x0001FF"
+    text: "xflush(FLUSH-EEPROM boot/partition(boot=512k) 8M byte(erase block = 64Kbyte)"
+  - offset: "0x0E3311"
+    text: "SI(QUICC Serial Interface)"
+  - offset: "0x0E3AA8"
+    text: "INS1500"
+  - offset: "0x05BE04"
+    text: "test script for QMC,QCH,MHHDL driver."
+  - offset: "0x05E33B"
+    text: "\"P1-1\",\"P1-2\",...,\"P1-WAN\",\"P1-PRI\","
+  - offset: "0x04B0DE"
+    text: "PH:PRI ACT"
+  - offset: "0x0E7088"
+    text: "(^) $ >"
+  - offset: "0x0E71B3"
+    text: "show -a /version"
+  - offset: "0x029DC0"
+    text: "Frame Relay group"
+  - offset: "0x02E7A8"
+    text: "ospfSetup: %s NG. syntax(%d):too long line."
+  - offset: "0x112E02"
+    text: "PPP:Connect(LCP:%d)"
+  - offset: "0x0CD92F"
+    text: "telnetd:incoming connection from (%s), allocate ttyp%d"
+  - offset: "0x02EA6F"
+    text: "/setup/common/ifindex.map"
+  - offset: "0x026E1F"
+    text: "Usage: mkrd unit-no size"
+  - offset: "0x029B7B"
+    text: "buffer over floow"
+wanted:
+  - id: ftl-chips-1-3
+    what: "The other three chips of the 8 MB xflush flash disk (logical units 4k+1, 4k+2, 4k+3 in their never-rewritten blocks)"
+    look_for: "MBM29F016-class 2 MB images where every 64 KB unit starts 24 11 00 80 00 00 00 80 00 01 00 80 00 01 02 00 00 40 00 20, the word at +0x24 = 4*index+1/2/3 in untouched units, and none of this chip's logical numbers (00 04 0C 0F 15 16 1D 25 29 2D 31 35 39 3A 40 41 43 44 48 52 55 5A 5E 60-7C step 4) repeated"
+    why: "completes the 128-unit logical space so the file system (superblock, inodes, /version) can be rebuilt"
+  - id: boot-lanes-1-3
+    what: "Byte lanes 1-3 of the boot image striped across logical units 1-3"
+    look_for: "unit 0 of a partner chip with the same xflush parameter sector at 0x200 and lane-split 68k bytes from 0x000400 to about 0x003877 (low bytes of opcodes, e.g. 75 after 4E positions)"
+    why: "interleaving the four lanes yields the ~55 KB boot loader and its entry point"
+  - id: fs-superblock
+    what: "File-system superblock, inode table and root directory (32-byte dir entries: BE32 inode + 28-byte name)"
+    look_for: "directory sectors for /, /setup, /sbin, /bin, /share, /admin, /etc; inode 0x12 is the parent of the /setup-style directory with inode 0x194"
+    why: "needed to map files to sectors and recover names of the 41 ABCD0200 executables"
+  - id: version-file
+    what: "/version file contents and any product banner"
+    look_for: "short text file shown by 'show -a /version'; vendor or model name strings"
+    why: "would identify the maker and model of the router"

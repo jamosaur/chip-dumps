@@ -1,0 +1,92 @@
+dump: MBM29F016A/19
+kind: byte-lane
+bus:
+  width_bits: 32
+  stride: 4
+  lane: 2
+  lane_evidence: "Sector 0 data at 0x000400-0x003875 equals every 4th byte, phase 2 from a 512-byte block boundary, of a 68k program stored whole in this chip's FS (0x110200-0x11ACAE); e.g. '37BF26aex' at 0x3860 is chars 3,7,11.. of '0123456789ABCDEF\\0' '0123456789abcdef\\0' '0x'. Independently, every untouched FS unit has logical number 4*sector+2."
+bit_order: normal
+endianness: big
+architecture: "68k (MC68360 QUICC, CPU32+)"
+identification:
+  device: "Seiko Instruments (SII) NS-2482 Multi Access Server / communication server, system software Ver 3.1 (1998.08.31)"
+  maker: "Seiko Instruments Inc. (SII)"
+  confidence: high
+layout: "32 x 64 KB flash-FS units, each = 0x30-byte unit header + padding to 0x200 + 127 x 512-byte blocks of whole (non-interleaved) file data; sector 0 additionally holds lane 2 of a 32-bit-interleaved 68k IPL image at 0x400-0x3875; units 1,2 and 24-31 zero-filled"
+structures:
+  - offset: "0x000000"
+    type: "FS unit header (same in all 32 sectors except +0x24..+0x2F)"
+    detail: "probable magic 0x2411, 0x0080 blocks/unit, 0x0200 block size; +0x24 u16 logical unit no., +0x26 u16 generation/erase count, +0x2C/+0x2E u16 status twice"
+    raw: "24 11 00 80 00 00 00 80 00 01 00 80 00 01 02 00 00 40 00 20"
+  - offset: "0x000024"
+    type: "Logical unit numbers per sector 0..31"
+    detail: "02 06 0A 10 12 18 1B 1F 23 27 2C 2E 32 37 3D 3F 09 49 28 4E 5F 56 0E 5D 62 66 6A 6E 72 76 7A 7E; untouched units = 4*sector+2"
+  - offset: "0x00002C"
+    type: "Unit status per sector 0..31"
+    detail: "1 1 1 3 1 3 2 3 2 3 2 1 1 2 3 2 13 4 2 3 3 4 3 4 1 1 1 1 1 1 1 1 (hex); generation +0x26: 0 0 0 2 0 1 1 1 1 1 1 0 0 1 2 1 5 2 3 1 12 2 5 1 0 0 0 0 0 0 0 0"
+  - offset: "0x000400"
+    type: "Byte lane 2 of 32-bit-interleaved 68k boot/IPL program (POC-IDL / pocvup family)"
+    detail: "0x3476 bytes = CPU offsets 0x1002..0xE1D6 at stride 4; matches stride-1 copy at 0x110200-0x11ACAE in this chip's FS; ends before the T1/E1 strings of that copy (older build)"
+    raw: "46 7A 2A 40 61 03 00 00 F4 00 F4 61 4E F4 4E 00"
+  - offset: "0x100200"
+    type: "Inode records, 128 bytes each, 110 live"
+    detail: "u32 mode as hex digits (0x0755/0x0664/0x0777), +4 u16 nlink, +0x0A u32 size, +0x16/+0x1A/+0x76 Unix times, +0x20 u16 nblocks, +0x22 u32 block list; first record size 727 blocks 0x24B4,0x24B5"
+    raw: "00 00 07 55 00 01 00 00 00 00 00 00 02 D7 00 00"
+  - offset: "0x11FC00"
+    type: "Logical block 0x24B4 (unit 0x49 idx 125) - verifies block = unit*127 + (off-0x200)/0x200"
+    detail: "text '# command interpreter setup'"
+  - offset: "0x160200"
+    type: "Root directory block, 32-byte entries (u32 inode + 28-byte name)"
+    detail: "admin:1 bin:2 boot.3rd:440 bootconf:4 driver:5 etc:6 init:7 init.root:466 mnt:9 mnt2:10 mnt3:11 nsx.sys:467 pocvup:469 save:14"
+  - offset: "0x040200"
+    type: "Executable header (60 on this chip, block-aligned)"
+    detail: "magic AB CD 02 00 05 32 00 00 06 55 06 55 06 55; +0x28 header length 0xF0/0x100/0x110; section name 'code' at +0x50"
+    raw: "AB CD 02 00 05 32 00 00 06 55 06 55 06 55 00 04"
+strings_of_note:
+  - offset: "0x11DA0C"
+    text: "SII Multi Access Server NS-2482."
+  - offset: "0x149004"
+    text: "Communication Server NS-2482 System Software 1998.08.31 (Ver 3.1)"
+  - offset: "0x110B20"
+    text: "Pocvup version 1.0 start."
+  - offset: "0x110BE8"
+    text: "POC-IDL Ver 3.0 "
+  - offset: "0x110B3A"
+    text: "POC-vup Flash Rom Erase Error."
+  - offset: "0x038963"
+    text: "CICR  %08X %08X %08X"
+  - offset: "0x038A24"
+    text: "BusError(SR:%04X PC:%08X EA:%08X SSW:%04X FA:%08X)"
+  - offset: "0x142C9F"
+    text: "#---- SI(QUICC Serial Interface)"
+  - offset: "0x0A4200"
+    text: "#\tinit.conf (start up script)"
+  - offset: "0x092FFF"
+    text: "Serial No.        : %X"
+  - offset: "0x0476F7"
+    text: "------  68000 REGISTERS -------"
+  - offset: "0x11ADC7"
+    text: "CCITT Recommendation G.703"
+  - offset: "0x003860"
+    text: "37BF26aex (lane-2 view of hex-digit table)"
+wanted:
+  - id: ns2482-fs-lane0
+    what: "Chip index 0 of the 8 MB FS array (data bits D31-D24)"
+    look_for: "MBM29F016A-sized image whose 64 KB sectors start '24 11 00 80 00 00 00 80 00 01 00 80 00 01 02 00 00 40 00 20' with untouched units numbered 4*sector+0 (0x00,0x04,...,0x7C) at +0x24; sector 0 at 0x400 holds lane 0 of the same 68k IPL"
+    why: "supplies the remaining logical units, IPL bytes at CPU offsets 0x1000+4k"
+  - id: ns2482-fs-lane1
+    what: "Chip index 1 of the FS array (D23-D16)"
+    look_for: "same unit header; untouched units numbered 4*sector+1 (0x01,0x05,...,0x7D); lane 1 of the IPL at 0x400"
+    why: "remaining units and IPL lane"
+  - id: ns2482-fs-lane3
+    what: "Chip index 3 of the FS array (D7-D0)"
+    look_for: "same unit header; untouched units numbered 4*sector+3 (0x03,...,0x7F); lane 3 of the IPL at 0x400 (should show '0123'-phase chars such as '048C' of the hex table)"
+    why: "remaining units and IPL lane"
+  - id: ns2482-inode-table
+    what: "Main inode table / superblock covering inodes 1-470 (root, bin, driver, nsx.sys:467, pocvup:469, boot.3rd:440)"
+    look_for: "128-byte records with mode 0x0755/0x0664 written as hex digits, Unix times around 0x35EA41xx (1998-08-31) and 0x3789xxxx (1999-07), u32 block lists"
+    why: "needed to reassemble files, especially the nsx.sys OS image, across all four chips"
+  - id: ns2482-ipl-full
+    what: "Complete 32-bit IPL image from interleaving sector 0 of all four chips"
+    look_for: "after interleave, a 68k program from CPU offset 0x1000 containing 'POC-IDL' style exception table and '0123456789ABCDEF' at about CPU offset 0xE170"
+    why: "gives entry point and confirms how the boot ROM uses this array"

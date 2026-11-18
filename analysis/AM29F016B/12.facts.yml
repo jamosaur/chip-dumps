@@ -1,0 +1,52 @@
+dump: AM29F016B/12
+kind: byte-lane
+bus:
+  width_bits: 32
+  stride: 4
+  lane: 2
+  lane_evidence: "Flash file header magic byte here is 0x0B (byte 2 of BAD00B1E); the file-length byte 0x6A equals bits 15-8 of the length implied by where the data ends (about 0x4E6ACx); the a.out magic byte is 0x01 (byte 2 of 0x00000107). Lane numbered 0 = D31-D24, so lane 2 = D15-D8."
+bit_order: "fully reversed: D0<->D7, D1<->D6, D2<->D5, D3<->D4 (raw 0x04 = space, raw 0xD0 = 0x0B)"
+endianness: big
+architecture: "68k with 32-bit bus (68EC030 expected for Cisco 2500); link/movem prologues, not ColdFire"
+identification:
+  device: "Cisco 2500-series router, run-from-flash IOS image (c2500-i-l, IOS 11.x/12.0)"
+  maker: Cisco Systems
+  confidence: high
+layout: "One Cisco flash file: 0x40-byte flash header and 0x20-byte a.out header, then text (tables to chip 0x00A8FF, code to about 0x135418), data segment to 0x139AC2; erased from 0x139AC3. Whole file about 0x4E6B0C bytes of CPU space across 4 lanes."
+structures:
+  - offset: "0x000000"
+    type: "Cisco class-B flash file header, lane 2 (bits 15-8 of each long)"
+    detail: "magic byte 0B (BAD00B1E); length byte 6A; flags high byte FF; date byte 00; name characters 2,6,10,14 = '5','i','1','4'; name characters 18 onwards unwritten FF, so the name is 15-17 characters long, e.g. c2500-i-l.1xx-4x"
+    raw: "D0 56 FF 00 AC 96 8C 2C (bit-reversed: 0B 6A FF 00 35 69 31 34), then 8 x FF"
+  - offset: "0x000010"
+    type: "a.out exec header, lane 2"
+    detail: "magic 0x0107 -> 01; a_text bits 15-8 = 50; a_data = 1A; a_bss = B4; a_syms 00; a_entry 00 (fits 0x03000060); trsize/drsize 00. text about 0x4D50xx, data about 0x11Axx"
+    raw: "80 0A 58 2D 00 00 00 00 (bit-reversed: 01 50 1A B4 00 00 00 00)"
+  - offset: "0x13546A"
+    type: "IOS banner string, every 4th character (phase 2 of 'Cisco Internetwork...'); repeated at 0x1354CF"
+    detail: "sIrw rnymfrI( 0frC0LVi1(,ESOA()oi  69ysSe .meo5n 5ya -> '2500 Software (C2500-?-L), Version 1?.?(???), ... SOFTWARE (fc?) Copyright (c) 1986-199? ... Compiled Mon ?5-J?n-?? ?:?5? by ??a'"
+  - offset: "0x1398D5"
+    type: "table of 52-byte records at the end of the data segment, lane 2"
+    detail: "13 lane bytes per record: 05 05 00 00 00 XX 00 00 00 XX 00 00 00, XX rising slowly from 0x39 to 0x50"
+strings_of_note:
+  - offset: "0x13546A"
+    text: "sIrw rnymfrI( 0frC0LVi1(,ESOA()oi  69ysSe .meo5n 5ya"
+  - offset: "0x000004"
+    text: "5i14"
+wanted:
+  - id: cisco-flash-header-other-lanes
+    what: "Lanes 0, 1 and 3 of the flash file header at bank offset 0: magic bytes BA, D0, 1E; the rest of the length, checksum and date; and file-name characters 0,1,3,4,5,7,8,9,11,12,13,15,16 (expected 'c2500-i-l.1xx-4' plus a suffix)"
+    look_for: "first byte BA (lane 0), D0 (lane 1) or 1E (lane 3) in normal bit order, or their bit-reversed forms 5D, 0B, 78; FF from byte 0x08 onwards except for name characters"
+    why: "confirms the bank and gives the full image name and length"
+  - id: aout-header-other-lanes
+    what: "Other lanes of the a.out header at bank offset 0x40: 00 00 01 07 magic, text/data/bss sizes, entry 0x03000060"
+    look_for: "lane 0 byte 0x00 and lane 3 byte 0x07 at chip offset 0x10; lane 0 entry byte 0x03 at chip offset 0x15"
+    why: "gives the exact text and data sizes"
+  - id: ios-banner-other-lanes
+    what: "The remaining characters of the IOS banner 'Cisco Internetwork Operating System Software / IOS (tm) 2500 Software (C2500-I-L), Version ...' near chip offset 0x13546A (CPU about 0x4D51A8)"
+    look_for: "decimated banner fragments near the same chip offset, e.g. phase 0 'Coterpt tSw' ('Cisco Internetwork...' every 4th character from 0), the same end-of-data offset 0x139AC2 and FF after it"
+    why: "gives the exact IOS version, release train and build date"
+  - id: same-bank-end
+    what: "Partner lanes whose content ends within a byte of chip offset 0x139AC2 and are erased after it"
+    look_for: "last non-FF byte at chip offset 0x139AC1-0x139AC3; 68k opcode high bytes (lane 0) or low bytes (lanes 1 and 3: 75, 56, E7, B9) through 0x135400"
+    why: "the four lanes of this 8 MB bank"

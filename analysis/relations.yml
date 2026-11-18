@@ -1,0 +1,232 @@
+relations:
+  - id: sh-car-navigation-lanes-7-18
+    kind: lanes-of-bank
+    dumps: [MBM29F016A/18, MBM29F016A/7]
+    confidence: high
+    summary: "MBM29F016A/18 (even bytes, D15-D8) and MBM29F016A/7 (odd bytes, D7-D0) are the two byte lanes of one 16-bit SH firmware image."
+    evidence:
+      - "Header words interleave to the magic 12 34 56 78 at image offset 0x10 (18:0x000008 = 12 56, 7:0x000008 = 34 78) between AA AA AA AA and AA AA BB BB CC CC DD DD markers present on both chips."
+      - "Interleaving the whole of both chips (18 first) gives 69 complete RCS strings, e.g. \"$Header: cd.c,v 1.2 96/03/28 03:14:12 ariizumi cdctrl $\" (lane offset 0x01003C on both) and \"$Header: atapitbl.c,v 1.1 97/08/01 13:20:54 lisyos Exp $\"."
+      - "The default exception stubs at 0x000AE4 interleave to a1 f6 e4 04, a1 f4 e4 05 ... (bra common / mov #n,r4 for n = 4..255)."
+      - "Both chips end with the same trailer at 0x1FFFE8 (00 00 2D 2D 2D 2D xx xx ... AA x8) and the same code/data extent (data to 0x1F3F49)."
+      - "Source names in the interleaved image (diag_gps.c, chg_routcom.c, ini_voice.c, cd_fri_*.c, avn_map_dram.c) point to a car navigation unit with a CD-ROM map drive."
+    method: Interleaved both chips in full
+    found: 2026-11-18
+    status: current
+    fulfils:
+      - dump: MBM29F016A/7
+        wanted: sh-high-byte-lane
+      - dump: MBM29F016A/18
+        wanted: sh-odd-lane
+
+  - id: ns2482-unit-a-chips-15-19
+    kind: lanes-of-bank
+    dumps: [MBM29F016A/19, MBM29F016A/15]
+    confidence: high
+    summary: "MBM29F016A/19 (chip 2) and MBM29F016A/15 (chip 3) are two chips of the same NS-2482 flash disk; they share the 1999-07-12 06:20 software update."
+    evidence:
+      - "Inode change times are 1999-07-12 06:20 UTC (0x37898910) in 15's inode table (logical unit 0x08 at 15:0x060000, inodes 0-479) and in 19's (logical unit 0x09 at 19:0x100200, inodes 480-590). The other copies of these tables differ by board, at 1999-07-13 02:06 on 14 and 1999-03-25 06:11 on 13."
+      - "The two chips have no logical unit number in common (32 units each, sector headers +0x24), as required for chips of one volume."
+      - "19's inode 481 (124 bytes) points to block 0x24B6, which is 15:0x070200, the text \"# Frame Relay setup\" ending exactly at byte 124. In total, 67 of 19's files whose first block lies on 15 match in ABCD-header length or text size, and none mismatch."
+      - "Untouched units are numbered 4*sector+2 on 19 and 4*sector+3 on 15, and their sector-0 boot lanes interleave as lanes 2 and 3 (see ns2482-ipl-lanes)."
+    method: Parsed unit headers and inode tables, read 2 byte ranges
+    found: 2026-11-18
+    status: current
+    fulfils:
+      - dump: MBM29F016A/19
+        wanted: ns2482-fs-lane3
+      - dump: MBM29F016A/15
+        wanted: ns2482-flashdisk-units-2mod4
+
+  - id: ns2482-unit-a-chip-12
+    kind: lanes-of-bank
+    dumps: [MBM29F016A/12, MBM29F016A/19, MBM29F016A/15]
+    confidence: medium
+    summary: "MBM29F016A/12 is probably chip 0 of the same NS-2482 flash disk as 19 and 15."
+    evidence:
+      - "The logical units on 12 (31 units plus one spare) share no number with 19 or 15. Together the three chips leave exactly 32 numbers free, and those fit a chip 1 (01 05 0D 19 1A 1E 21 22 26 2A 2F 33 36 3B 3E 45 47 4D 51 53 54 57 5B 5C 61 65 69 6D 71 75 79 7D)."
+      - "Only one spare (transfer) unit appears across the three chips (12:0x130000, LU FFFF), as expected for one 128-unit volume."
+      - "12 cannot belong to the other units in the collection. It shares 4 logical units with 14 (43 44 48 52, identical content), 3 with 5, 2 with 13, and 1 with 17 (and both 12 and 17 have a spare). It also differs from chip 0 of unit B (3) in units 0F, 40, 43 and 44."
+      - "Not proven. 12 holds no inode table or timestamp, so a chip 0 from a sixth unit with no overlap cannot be ruled out. Chip 3 (unit B) also has no overlap with 19, which shows that a cross-unit pair can share no logical units by chance."
+    method: Compared logical-unit maps of all nine NS-2482 chips
+    found: 2026-11-18
+    status: superseded
+    superseded_by: ns2482-unit-a-chip-12-confirmed
+    note: "The group analysis rebuilt unit A's file system and found that every block pointer into 12 checks out, while unit B's chip 0 fails the same tests, so the claim now stands at high confidence."
+    fulfils:
+      - dump: MBM29F016A/19
+        wanted: ns2482-fs-lane0
+      - dump: MBM29F016A/15
+        wanted: ns2482-flashdisk-units-0mod4
+      - dump: MBM29F016A/12
+        wanted: ftl-chips-1-3
+
+  - id: ns2482-unit-b-chips-3-13
+    kind: lanes-of-bank
+    dumps: [MBM29F016A/3, MBM29F016A/13]
+    confidence: high
+    summary: "MBM29F016A/3 (chip 0) and MBM29F016A/13 (chip 1) are two chips of the same NS-2482 flash disk; it is a different unit from 15/19, with its own block allocation and a 1999-03-25 update."
+    evidence:
+      - "13's inode table (logical unit 0x09 at 13:0x0F0200, inodes 480-590, change time 1999-03-25 06:11 UTC) points into 3's units 59 times with matching sizes and no mismatch. The same check of 13 against 15 gives 18 matches and 28 mismatches, and of 19's table against 3 gives 18 and 30."
+      - "13's inode 484 (399 bytes) points to block 0x24B8 = 3:0x080600, \"#<TAB><Layer2 Configuration File>\" text ending exactly at byte 399. On unit A the same files are allocated two blocks later (19's inode 481 -> 0x24B6)."
+      - "The two chips have no logical unit in common. Units 4*sector+0 are untouched on 3 and units 4*sector+1 on 13."
+      - "Logical unit 0x1D ends at 3:0x07FFFF in mid-68k code that continues at the start of LU 0x1E (13:0x070200)."
+    method: Parsed unit headers and inode tables, read 3 byte ranges
+    found: 2026-11-18
+    status: current
+    fulfils:
+      - dump: MBM29F016A/3
+        wanted: ftl-chips-1-3
+      - dump: MBM29F016A/3
+        wanted: unit-continuations
+      - dump: MBM29F016A/13
+        wanted: fs-partner-chips
+
+  - id: ns2482-ipl-lanes
+    kind: shared-data
+    dumps: [MBM29F016A/3, MBM29F016A/12, MBM29F016A/5, MBM29F016A/13, MBM29F016A/17, MBM29F016A/4, MBM29F016A/19, MBM29F016A/14, MBM29F016A/15]
+    confidence: high
+    summary: "Sector 0 of every NS-2482 chip holds one byte lane of the same 2nd Boot 1.2 / POC-IDL Ver 3.0 program, identical for each chip position across all units, and the four lane versions interleave into the complete program."
+    evidence:
+      - "0x000400-0x00387F is byte-identical within each chip position. Lane 0 (3, 12) starts 32 03 00 00 61 60, lane 1 (5, 13, 17) 42 F6 00 00 3C 00, lane 2 (4, 19) 46 7A 2A 40 61 03, and lane 3 (14, 15) 52 71 A4 00 28 5A."
+      - "Interleaving 12, 17, 19 and 15 (stride 4, in that order) from CPU 0x1000 gives readable 68k text. Examples are \"Vect #%d %s SR=0x%04X PC=0x%08X\" at 0x36BF, \"2nd Boot version 1.2 start.\" at 0x36F1, \"load 3rd Boot from %s (%s %08X-%08X) OK.\" at 0x387B, \"0123456789ABCDEF\" at 0x391F and \"POC-IDL Ver 3.0 \" at 0x4110."
+      - "So lane order equals the chip index given by the untouched logical-unit numbers (4*sector+0..3)."
+    method: Hashed sector 0 of nine chips, interleaved 4 lanes
+    found: 2026-11-18
+    status: current
+    fulfils:
+      - dump: MBM29F016A/3
+        wanted: boot-lanes
+      - dump: MBM29F016A/4
+        wanted: poc-idl-other-lanes
+      - dump: MBM29F016A/12
+        wanted: boot-lanes-1-3
+      - dump: MBM29F016A/13
+        wanted: boot-lanes
+      - dump: MBM29F016A/14
+        wanted: ns2482-boot-lanes-0-2
+      - dump: MBM29F016A/17
+        wanted: boot-other-lanes
+      - dump: MBM29F016A/19
+        wanted: ns2482-ipl-full
+
+  - id: ns2482-same-software-five-units
+    kind: same-firmware
+    dumps: [MBM29F016A/3, MBM29F016A/4, MBM29F016A/5, MBM29F016A/12, MBM29F016A/13, MBM29F016A/14, MBM29F016A/15, MBM29F016A/17, MBM29F016A/19]
+    confidence: high
+    summary: "The nine NS-2482 flash-disk chips come from at least five units of the same product. All carry the same software install (Ver 2.2 of 1997-10-29, updated to Ver 3.1 of 1998-08-31), but their wear-levelling states differ."
+    evidence:
+      - "Chips from different units hold the same logical units with identical content. 4 and 19 share 29 identical units, 5, 13 and 17 share 22, 14 and 15 share 24, and 5 and 12 share 41, 48 and 5E. One volume holds each logical unit only once, so these chips belong to different units."
+      - "Chip positions present include 0 (3, 12), 1 (5, 13, 17), 2 (4, 19) and 3 (14, 15). Logical-unit conflicts also separate 5 from every other chip and 17 from 12, 14 and 15. That requires at least five units."
+      - "Inode tables 0-479 on 14 and 15 have identical sizes and block lists, but their change times are 1999-07-13 02:06 and 1999-07-12 06:20. Erase counts differ in both directions (sector 6 0x1A vs 0x1F, sector 9 0x08 vs 0x04), so these are two physical chips and not one chip dumped twice."
+      - "Unit B (3, 13) has the same 480-590 files with the same sizes as unit A (19), allocated two blocks earlier, with change time 1999-03-25 06:11."
+    method: Compared unit maps and per-unit content of nine chips, parsed 4 inode tables
+    found: 2026-11-18
+    status: current
+
+  - id: cisco-flash-d0-d2-swap-8-9-10
+    kind: same-board-type
+    dumps: [MBM29F016A/8, MBM29F016A/9, MBM29F016A/10]
+    confidence: low
+    summary: "MBM29F016A/8, 9 and 10 are byte lanes of Cisco-style 32-bit flash banks with the same D0<->D2 data-bit swap, each holding lane-split mzip ZIP data, but none of them continues another's archive."
+    evidence:
+      - "All three need the same D0<->D2 bit swap to decode ZIP signatures (8:0x10B895 and 10:0x075596 raw 4E -> 'K'; 9:0x001140 raw 06 -> 03)."
+      - "The central-directory name characters on 10 ([3]='0', [7]='S', [11]='N') fit the C2600-??.BIN pattern of 9's local header ([0]='C', [4]='0', [8]='.'), while 8's ([3]='4', [7]='E') do not."
+      - "10 is not the tail of 9's archive. With 9's ZIP at bank 0x4500 and data at 0x452A, a central directory at 10's offset gives compressed-size bits 15-8 of 0x20, but 10 records 0x11. 9's flash-file length bits 15-8 (0x56) also fit neither 10's end (about 0x65) nor 8's (about 0xE2)."
+    method: Read 1 byte range, recomputed ZIP offsets from facts
+    found: 2026-11-18
+    status: current
+
+  - id: ns2482-unit-a-chip-12-confirmed
+    kind: lanes-of-bank
+    dumps: [MBM29F016A/12, MBM29F016A/19, MBM29F016A/15]
+    confidence: high
+    summary: "MBM29F016A/12 is chip 0 (lane 0) of the same NS-2482 flash disk as 19 and 15. The rebuilt file system confirms this; before, it rested only on the absence of logical-unit clashes."
+    evidence:
+      - "With the three chips' units placed by logical-unit number, 23 of 23 files whose first block is on 12 start with an AB CD 02 00 header whose length equals the inode size (e.g. /share/libftp.r at 12:0x157A00, /share/vupd at 12:0x177800). 30 of 30 files whose last block is on 12 end exactly at the inode size. All 1,331 live blocks on 12 are marked used in the bitmap at 15:0x060800."
+      - "The /share directory blocks on 12 (12:0x0B3200, 0x0C4200, 0x0E2000) list inodes 572-585, whose records are in the 1999-07-12 06:20 inode table on 19 (e.g. inode 573 at 19:0x103080). Inode 468 (15:0x06FA00) points to 12:0x12F600, which holds \"NS-OS version 3.1 start.\"."
+      - "As a control, unit B's chip 0 (MBM29F016A/3) in 12's place clashes with 19 and 15 on units 0x13, 0x1C, 0x42 and 0x4A and fails 34 of the same checks."
+      - "The 2nd Boot and POC-IDL header byte-sum checksums in sector 0 match only with lane order 12, (lane 1 from another unit), 19, 15."
+    method: Group analysis (analysis/groups/sii-ns-2482-unit-a.md); re-read 3 byte ranges
+    found: 2026-11-18
+    status: current
+    fulfils:
+      - dump: MBM29F016A/19
+        wanted: ns2482-fs-lane0
+      - dump: MBM29F016A/15
+        wanted: ns2482-flashdisk-units-0mod4
+      - dump: MBM29F016A/12
+        wanted: ftl-chips-1-3
+
+  - id: ppc-arm-controller-same-firmware-1-13
+    kind: same-firmware
+    dumps: [AM29F016B/1, AM29F016B/13]
+    confidence: high
+    summary: "AM29F016B/1 and AM29F016B/13 are the same byte lane (lane 0, D31-D24) of the same PowerPC/ARM firmware, taken from two different boards: only the parameter table and the log sector differ."
+    evidence:
+      - "495 of the 512 4 KB blocks are identical. Both chips have the same 'M' block headers (4D 00 00 00 FF FF 12 00 80 00 FF at 0x000000, per-block bytes 12 A5 2F 4A BA BB 9A A7 2E 1A) and the same image end at 0x094777."
+      - "Below 0x0A0000 only 50 bytes differ, all in the 63-record parameter table at 0x0080xx-0x0083EB (e.g. 1's 'M1S4' / '25' against 13's '02:93' / '32'), so these are per-unit settings."
+      - "13 has a written log/settings sector at 0x1F0000-0x1FFFFF (header 4D 00 52 4E 07 00 B2 0F); on 1 that sector is erased."
+      - "Both are lane 0, so they cannot be lanes of one bank; neither chip's bank-mates (lanes 1-3) is in the collection."
+    method: Compared both chips block by block, read 2 byte ranges
+    found: 2026-11-18
+    status: current
+
+  - id: ppc-arm-controller-board-type-1-6-13
+    kind: same-board-type
+    dumps: [AM29F016B/6, AM29F016B/1, AM29F016B/13]
+    confidence: medium-high
+    summary: "AM29F016B/6 is lane 1 (D23-D16) of a bank with the same block-chained PowerPC/ARM flash layout as 1 and 13, but it holds a different firmware build, so it is a third board of the same type and not their bank-mate."
+    evidence:
+      - "Paired with 13's lane 0, 6's block headers complete 32-bit addresses: block 2 own address 80|08 = 0x8008xxxx (bank offset 0x080000), next-block 80|0C, and block 9 previous 80|20 = block 8 at 0x200000."
+      - "Instruction pairs are valid at the same offsets: 0x000840 gives 7C63 7C63 3C40 3842 3DA0 39AD (EABI r2/r13 set-up), 0x02B943 gives ARM E1A0 E92D E24C (mov ip,sp / stmfd / sub fp), and 0x0340CA starts the same 7C63 3C40 ... 9421 PowerPC code."
+      - "The erased holes 0x02BBD1-0x02BC89 and 0x034F8F-0x034FD4 are the same on both, and the holes before 0x02B943, 0x033CCA, 0x0340CA and 0x035251 end at the same offsets."
+      - "But the builds differ: 6's data ends at 0x093397 against 0x094777 on 1/13, block 1 ends at 0x01CCDC against 0x01D383, ARM image A ends at 0x02A376 against 0x02A2C0, and in 0x038000-0x03FFFF only 1 of 13's 122 stwu bytes (94) has 21 on 6. Text on 1/13 at 0x093398-0x094777 faces erased bytes on 6."
+      - "6 also has its own event-log sector at 0x1F0000 (header 44 00 01 44 CF 00 45 71), as 13 does."
+    method: Read 6 byte ranges, compared erased-run maps and lane-0/lane-1 instruction pairs
+    found: 2026-11-18
+    status: current
+
+  - id: gold-touch-duplicate-3-7
+    kind: duplicate
+    dumps: [AM29F016B/3, AM29F016B/7]
+    confidence: high
+    summary: "AM29F016B/3 is a faulty read (A11 stuck) of the same Gold Touch Multi-Game lane-2 ROM as AM29F016B/7: every byte 3 did capture matches 7, including the in-flash meter records."
+    evidence:
+      - "For all 1,048,576 offsets with bit 11 clear, 3 equals 7 except one byte: 3:0x1071F8 = 01, 7:0x1071F8 = 03 (one bit)."
+      - "This includes the run-time records written in flash at 0x040000-0x041C2D, which are unit-specific, so this is probably the same chip read twice rather than a second board."
+      - "3's A11 = 1 halves are copies of the A11 = 0 halves (0 of 1,048,576 pairs differ); on 7 they hold distinct data (575,229 pairs differ). So 7 is the good read, and 3's 'S -G C' / 'RDy' header and 0x1F9B96 PCM end are 7's 0x000118 header and 0x1F9396 end."
+    method: Compared both chips over the A11 = 0 halves
+    found: 2026-11-18
+    status: current
+    fulfils:
+      - dump: AM29F016B/3
+        wanted: a11-halves
+
+  - id: cisco-2500-reversed-bits-8-9-12
+    kind: same-board-type
+    dumps: [AM29F016B/8, AM29F016B/9, AM29F016B/12]
+    confidence: medium
+    summary: "AM29F016B/8, 9 and 12 are byte lanes of three different Cisco 68k (2500-class) flash banks wired with fully reversed data bits, each holding a different run-from-flash image."
+    evidence:
+      - "After reversing every byte, each starts with a lane of a Cisco flash file header and an a.out header: 8 = 0B DB FF 00 '5js11i' / 01 3E 9D 04, 12 = 0B 6A FF 00 '5i14' / 01 50 1A B4, 9 = D0 4A 92 00 '2-.-i' / 02 49 01 05. So 8 and 12 are lane 2 (0B of BAD00B1E, 01 of 0x0107) and 9 is lane 1. 8's header was not recognised in its isolated analysis."
+      - "They are not lanes of one bank. 8 and 12 are both lane 2 with different file names (character 6 'j' against 'i'). Data ends at 9:0x12AFD4, 12:0x139AC2 and 8:0x1FFFFF (no erased tail), so 9's bank-mates would end near 0x12AFD4."
+      - "Bytes 0x1C-0x1F agree in form on 8 and 12 (B0 00 01 EE and B0 00 01 AC), and 9 and 12 carry 2500 banners (C2500-P-L, C2500-?-L)."
+      - "MBM29F016A/11 (Cisco IGS lane 1, a different bit permutation, data to 0x0F5C4D) matches none of them."
+    method: Read 3 header ranges with bit reversal, compared end offsets
+    found: 2026-11-18
+    status: current
+
+  - id: monotype-font-store-5-11
+    kind: same-board-type
+    dumps: [AM29F016B/5, AM29F016B/11]
+    confidence: medium
+    summary: "AM29F016B/5 and AM29F016B/11 are stride-8 byte lanes of 64-bit TrueType font stores with the same layout, but they hold different fonts, so they are not lanes of the same bank."
+    evidence:
+      - "Both have a 13-byte header lane at 0x000000 (5: 01 00 00 98 00 00 FD 00 00 00 FD FD FD; 11: CD 00 00 00 0C 00 00 00 00 00 00 00 C6), erased bytes to 0x07FFFF and an sfnt table directory at 0x080000."
+      - "11:0x080000 reads 01 03 44 00 29 00 B7 00: sfnt bytes 1, 9, 17, 25, ... (version byte 1, entrySelector 3, then checksum byte 1 and length byte 1 of each table record). So 11 is lane 1 of an 8-byte stride, the same stride as 5 (lane 7)."
+      - "Both have a step-8 table at 0x080032 (5: 04 0C 14 1C 24 ...; 11: 06 0E 16 1E 26 ...), the same structure seen through different lanes."
+      - "The fonts differ: 5's second font starts at 0x0C616C and its loca lanes give 7,712 glyphs, while 11's second block starts at 0x0FD8DC and its loca lane has 14,493 entries. Lanes of one bank would share the boundaries."
+    method: Read 3 byte ranges
+    found: 2026-11-18
+    status: current

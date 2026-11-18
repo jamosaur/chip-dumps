@@ -5,7 +5,113 @@
 # they are kept. Comments other than this header are not preserved.
 
 chips:
-  MBM29F016:
+  AM29F016B:
+    dumps:
+      1:
+        file: 1.bin
+        size: 2097152
+        sha256: 3060b9d3bee74dd4f0297bbad032c3ac1e3a1b3fc1c8933c4c126f23c32de0ac
+        added: '2026-11-18T11:22:49'
+        source: ''
+        notes: ''
+        cross_analysed: '2026-11-18'
+      2:
+        file: 2.bin
+        size: 2097152
+        sha256: 37dbe7f381344ef4f351df8bae1cfe74cae91083b64eb3cf960bada42b94f036
+        added: '2026-11-18T11:38:12'
+        source: ''
+        notes: ''
+        cross_analysed: '2026-11-18'
+      3:
+        file: 3.bin
+        size: 2097152
+        sha256: f9980f44c97048b3f00997deb3fe446d45d7589b56f778c41515e7b09439d57f
+        added: '2026-11-18T11:51:16'
+        source: ''
+        notes: ''
+        cross_analysed: '2026-11-18'
+      4:
+        file: 4.bin
+        size: 2097152
+        sha256: b64585b95df71a3804ea298ba6f6c5200d4ecc96543da23afbb424b0d652504f
+        added: '2026-11-18T11:54:05'
+        source: ''
+        notes: ''
+        cross_analysed: '2026-11-18'
+      5:
+        file: 5.bin
+        size: 2097152
+        sha256: 6ca62f7d404f4edfc1cdddb69023204b2143edb5210535ef806439980ab6808f
+        added: '2026-11-18T11:54:52'
+        source: ''
+        notes: ''
+        cross_analysed: '2026-11-18'
+      6:
+        file: 6.bin
+        size: 2097152
+        sha256: 94e99d81254da6d32bb91346595fd9817b1853ec7ef1e051508826da43d3cc4a
+        added: '2026-11-18T11:57:05'
+        source: ''
+        notes: ''
+        cross_analysed: '2026-11-18'
+      7:
+        file: 7.bin
+        size: 2097152
+        sha256: 86877bc65dc10ec6ea76e0b8b7d18821fdb1182e23305d41ccfa4fea1141c3ba
+        added: '2026-11-18T11:58:02'
+        source: ''
+        notes: ''
+        cross_analysed: '2026-11-18'
+      8:
+        file: 8.bin
+        size: 2097152
+        sha256: 62ba22e6e3db038e60b0d817b0dfbf143e131fb0891a39dea7535c76878497d4
+        added: '2026-11-18T12:07:34'
+        source: ''
+        notes: ''
+        cross_analysed: '2026-11-18'
+      9:
+        file: 9.bin
+        size: 2097152
+        sha256: 0e53ad087bb5af8f1f7a84f5d709d499a40a48a5e1d9659498252b3bc4d31572
+        added: '2026-11-18T12:08:37'
+        source: ''
+        notes: ''
+        cross_analysed: '2026-11-18'
+      10:
+        file: 10.bin
+        size: 2097152
+        sha256: 3327c7f536b91dcc3a58c4e715a9177eadcd4c059074598b75ffbdbab781986d
+        added: '2026-11-18T12:11:36'
+        source: ''
+        notes: ''
+        cross_analysed: '2026-11-18'
+      11:
+        file: 11.bin
+        size: 2097152
+        sha256: c0a5e2d0ce06f733b476a44a29abdaa332b3777d5baef6679ddb711455065566
+        added: '2026-11-18T12:12:32'
+        source: ''
+        notes: ''
+        cross_analysed: '2026-11-18'
+      12:
+        file: 12.bin
+        size: 2097152
+        sha256: 17d535e278aa2c816b60275c5d729bd85bb4ebcfc5951d794475f7c132e36bf4
+        added: '2026-11-18T12:15:35'
+        source: ''
+        notes: ''
+        cross_analysed: '2026-11-18'
+      13:
+        file: 13.bin
+        size: 2097152
+        sha256: 9fc20cb68e0c441e87a0e18d77e11e682d1a844a1c6a161442445f907feb539b
+        added: '2026-11-18T12:16:18'
+        source: ''
+        notes: ''
+        cross_analysed: '2026-11-18'
+  MBM29F016A:
     dumps:
       1:
         file: 1.bin
@@ -14,6 +120,7 @@ chips:
         added: '2026-11-17T21:40:17'
         source: ''
         notes: ''
+        cross_analysed: '2026-11-18'
       2:
         file: 2.bin
         size: 2097152
@@ -21,6 +128,7 @@ chips:
         added: '2026-11-17T22:01:13'
         source: ''
         notes: ''
+        cross_analysed: '2026-11-18'
       3:
         file: 3.bin
         size: 2097152
@@ -28,6 +136,7 @@ chips:
         added: '2026-11-17T22:03:22'
         source: ''
         notes: ''
+        cross_analysed: '2026-11-18'
       4:
         file: 4.bin
         size: 2097152
@@ -35,6 +144,7 @@ chips:
         added: '2026-11-17T22:04:33'
         source: ''
         notes: ''
+        cross_analysed: '2026-11-18'
       5:
         file: 5.bin
         size: 2097152
@@ -42,6 +152,7 @@ chips:
         added: '2026-11-17T22:05:41'
         source: ''
         notes: ''
+        cross_analysed: '2026-11-18'
       6:
         file: 6.bin
         size: 2097152
@@ -49,6 +160,7 @@ chips:
         added: '2026-11-17T22:06:58'
         source: ''
         notes: ''
+        cross_analysed: '2026-11-18'
       7:
         file: 7.bin
         size: 2097152
@@ -56,6 +168,7 @@ chips:
         added: '2026-11-17T22:10:43'
         source: ''
         notes: ''
+        cross_analysed: '2026-11-18'
       8:
         file: 8.bin
         size: 2097152
@@ -63,6 +176,7 @@ chips:
         added: '2026-11-17T22:11:48'
         source: ''
         notes: ''
+        cross_analysed: '2026-11-18'
       9:
         file: 9.bin
         size: 2097152
@@ -70,6 +184,87 @@ chips:
         added: '2026-11-17T22:13:19'
         source: ''
         notes: ''
+        cross_analysed: '2026-11-18'
+      10:
+        file: 10.bin
+        size: 2097152
+        sha256: 74234719433d5fd11e2408caa5752228dc27e2c9ca851d3fb8adf88b548eebf4
+        added: '2026-11-18T10:15:06'
+        source: ''
+        notes: ''
+        cross_analysed: '2026-11-18'
+      11:
+        file: 11.bin
+        size: 2097152
+        sha256: e910ebeb39dcbc1593b708916c419a9f73fb0054665a2c8e55e88fae6f6f9c19
+        added: '2026-11-18T10:41:07'
+        source: ''
+        notes: ''
+        cross_analysed: '2026-11-18'
+      12:
+        file: 12.bin
+        size: 2097152
+        sha256: 8cc7bd24dc924703f0c31f030dfb690f56fea471ceb2388ad0d1a9bb5ec7da4e
+        added: '2026-11-18T10:47:51'
+        source: ''
+        notes: ''
+        cross_analysed: '2026-11-18'
+      13:
+        file: 13.bin
+        size: 2097152
+        sha256: 388f40c2c6d01d63c9e0a530f0eae71088ba5e4531d36fef8fa2721907e51ffe
+        added: '2026-11-18T10:48:53'
+        source: ''
+        notes: ''
+        cross_analysed: '2026-11-18'
+      14:
+        file: 14.bin
+        size: 2097152
+        sha256: 115affddd922557960a3e7375170667d255fb3598c59eb4ca5d803c7431837de
+        added: '2026-11-18T11:15:37'
+        source: ''
+        notes: ''
+        cross_analysed: '2026-11-18'
+      15:
+        file: 15.bin
+        size: 2097152
+        sha256: bac8636c6028daaf02b41e7422512fb8b312cd5ac7286b651437c8e3f0d9b151
+        added: '2026-11-18T11:16:30'
+        source: ''
+        notes: ''
+        cross_analysed: '2026-11-18'
+      16:
+        file: 16.bin
+        size: 2097152
+        sha256: 5d841d915d6a0cb14a253225117571b2d7cdfdf135753774b6bd41845ee6312f
+        added: '2026-11-18T11:17:26'
+        source: ''
+        notes: ''
+        cross_analysed: '2026-11-18'
+      17:
+        file: 17.bin
+        size: 2097152
+        sha256: 97332fdecd9c40a1653041ff428ef3f4ec2f40163f7bfaa31586cc3fdb68a678
+        added: '2026-11-18T11:18:20'
+        source: ''
+        notes: ''
+        cross_analysed: '2026-11-18'
+      18:
+        file: 18.bin
+        size: 2097152
+        sha256: 560cb333668ca9abc7024772a00b3c1b024cc0eeff48dae6cda85b4ffe1ed96e
+        added: '2026-11-18T11:19:11'
+        source: ''
+        notes: ''
+        cross_analysed: '2026-11-18'
+      19:
+        file: 19.bin
+        size: 2097152
+        sha256: b0d5653d108f27a0bb500fc5821004a83c87c3766463ef49a27567f8047c8685
+        added: '2026-11-18T11:19:56'
+        source: ''
+        notes: ''
+        cross_analysed: '2026-11-18'
   W25Q40CL:
     dumps:
       1:
@@ -79,3 +274,4 @@ chips:
         added: '2026-11-17T23:04:24'
         source: ''
         notes: ''
+        cross_analysed: '2026-11-18'

@@ -1,0 +1,1 @@
+unit-map.png: "Map of all 32 physical 64 KB units, each drawn as 128 512-byte blocks and labelled with its offset and the logical unit number from header +0x24; colours mark the unit header, the sector-0 byte-lane region, AB CD 02 00 executable headers, code, text and zero fill."

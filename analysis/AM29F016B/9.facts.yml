@@ -1,0 +1,56 @@
+dump: AM29F016B/9
+kind: byte-lane
+bus:
+  width_bits: 32
+  stride: 4
+  lane: 1
+  lane_evidence: "Runs of a constant byte equal bits 23-16 of their own CPU address (4*offset+1): 0x11 x1028 at 0x046E35 (CPU 0x11B8D4), 0x37 at 0x0DDC57, 0x3E at 0x0FB089, 0x0C at 0x032311, 0x08 at 0x020F2A. Byte 0 = 0xD0 (second byte of flash magic BAD00B1E), byte 1 = 0x4A (file length ~0x4ABF1x)."
+bit_order: "fully reversed: chip D0<->D7, D1<->D6, D2<->D5, D3<->D4 (CPU bit = 7 - chip bit)"
+endianness: big
+architecture: "68k (68020 or later; Cisco 2500 68EC030)"
+identification:
+  device: "Cisco 2500-series router, flash bank (4 x AM29F016B, 8 MB)"
+  maker: "Cisco Systems"
+  confidence: high
+layout: "Cisco flash file header (0x000000-0x00000F), IOS a.out-style image from 0x000010 (CPU 0x40) to 0x12AFD4 (CPU 0x4ABF54): tables, then 68k code and strings, banners at 0x12700B, data; erased 0x12AFD5 to end"
+structures:
+  - offset: "0x000000"
+    type: "Cisco flash file header (class B, likely), lane 1 bytes only"
+    detail: "bit-corrected: magic byte D0 (BAD00B1E), length byte 4A, checksum low byte 92, date byte 00, name chars 1,5,9,13,17 = '2','-','.','-','i' (fits c2500-p-l.113-4.bin); rest FF"
+    raw: "0B 52 49 00 4C B4 74 B4 96 FF FF FF FF FF FF FF"
+  - offset: "0x000010"
+    type: "IOS image header (a.out exec header, likely), lane 1 bytes"
+    detail: "bit-corrected 02 49 01 05 00 00 00 00 FF DE 00 00 02 01 00 02 00 47 01 05 ...: machtype 2 (68020), text ~0x49xxxx, data ~0x01xxxx, bss ~0x05xxxx, syms 0, entry byte 00"
+    raw: "40 92 80 A0 00 00 00 00 FF 7B 00 00 40 80 00 40"
+  - offset: "0x12700B"
+    type: "IOS version banner (lane 1, phase 0 = first character)"
+    detail: "bit-corrected lane text 'Coterpt tSw Sm5Sw 5P,rn.)ESOA()pg(1-8 cymI\\npde--00 ne' fits 'Cisco Internetwork Operating System Software / IOS (tm) 2500 Software (C2500-P-L), Version 11.?(?), RELEASE SOFTWARE (fc1) / Copyright (c) 1986-1998 by cisco Systems, Inc. / Compiled ??e ??-???-?? 0?:?0 by phanguye'; second copy at 0x127070"
+    raw: "C2 F6 2E A6 4E 0E 2E 04 2E CA EE 04 CA B6 AC CA"
+  - offset: "0x1270D4"
+    type: "short version string (lane 1, phase 0)"
+    detail: "fits '2500 Software (C2500-?-L), Version 11.?(4), RELEASE SOFTWARE (fc1)\\nCompiled T?? 1?-?u?-?8 ??:?? by phanguye'"
+    raw: "4C 04 2E A6 4C B4 94 A6 F6 8C 2C 4A 82 CA EA 04"
+strings_of_note:
+  - offset: "0x12700B"
+    text: "Coterpt tSw Sm5Sw 5P,rn.)ESOA()pg(1-8 cymI (bit-corrected stride-4 sample of the IOS banner; C2500-P-L, 1986-1998)"
+  - offset: "0x1270D4"
+    text: "2 te2-)eo14RASW 1olT1u8:bhu (sample of '2500 Software (C2500-P-L), Version 11.?(4) ... Compiled Tue 1?-?u?-98 by phanguye')"
+  - offset: "0x000004"
+    text: "2-.-i (file name chars 1,5,9,13,17: c2500-?-l.NNN-N.bin)"
+  - offset: "0x014A64"
+    text: "M yhca wsd89  hrr.$$pg(Metkt91.lg edV (copyright block; contains samples of 'All rights reserved.')"
+  - offset: "0x00B2E4"
+    text: "%ASPert i u%ASPert i u (repeated 146 times in this lane)"
+wanted:
+  - id: cisco-2500-ios-lane0
+    what: "Lane 0 (D31-D24) of the same 8 MB flash bank: byte 0 of each long"
+    look_for: "bit-reversed AM29F016B-sized image, data to ~0x12AFD5 then FF; byte 0 = BA (corrected) (raw 5D), byte 1 = 00; name sample 'c0l3b' at 0x000004; banner lane text 'cnnoOags teOt2 t' at 0x12700C"
+    why: "most significant bytes of every pointer/opcode word; completes header length and a.out sizes"
+  - id: cisco-2500-ios-lane2
+    what: "Lane 2 (D15-D8) of the same flash bank"
+    look_for: "byte 0 = 0B (corrected); name sample '5p14n' at 0x000004; banner lane text 'i etkeiSeoa\\n )0o' at 0x12700B; same 5E-56-E7-6E style 68k lane patterns"
+    why: "holds the IOS minor version digit and parts of the compile date"
+  - id: cisco-2500-ios-lane3
+    what: "Lane 3 (D7-D0) of the same flash bank"
+    look_for: "byte 0 = 1E (corrected); name sample '0-1.' at 0x000004; banner lane text 'sIrw rnymfrI( 0f' at 0x12700B"
+    why: "completes the 4.8 MB IOS image for disassembly and checksum verification"
